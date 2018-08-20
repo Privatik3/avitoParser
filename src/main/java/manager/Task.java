@@ -109,6 +109,9 @@ public class Task {
 
             // API
 //            DbManager.saveHistory(new History(ip, token, title, result.size(), endTime, resultLink));
+
+            for (Ad ad : resultList)
+                System.out.println(ad);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -118,8 +121,10 @@ public class Task {
 
         ArrayList<RequestTask> result = new ArrayList<>();
 
-        if (DEBUG_MODE)
+        if (DEBUG_MODE) {
+            result.add(new RequestTask("1", "debug", ReqTaskType.CATEGORY));
             return result;
+        }
 
         int pages = Integer.parseInt(parameters.get("max_pages"));
         parameters.remove("max_pages");

@@ -59,8 +59,16 @@ public class RequestManager {
 
     public static List<RequestTask> execute(ArrayList<RequestTask> tasks, Boolean isDebug) throws Exception {
 
-        if (isDebug)
-            return DBHandler.selectAllItems();
+        final ReqTaskType type = tasks.get(0).getType();
+
+        if (isDebug) {
+            switch (type) {
+                case ITEM:
+                    return DBHandler.selectAllItems();
+                case CATEGORY:
+                    return DBHandler.selectAllPages();
+            }
+        }
 
         if (client == null)
             initClient();
@@ -71,7 +79,6 @@ public class RequestManager {
         ArrayList<RequestConfig> goodProxy = new ArrayList<>();
 
         final long startTime = new Date().getTime();
-        final ReqTaskType type = tasks.get(0).getType();
         final int initTaskSize = tasks.size();
         final int bufferSize = tasks.size() < 100 ? tasks.size() : 100;
 
