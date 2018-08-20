@@ -43,6 +43,12 @@ public class MainTest {
         parameters.put("location_id", "653240");
         parameters.put("s", "101");
         parameters.put("s_trg", "3");
+
+        parameters.put("reportPhoto", "true");
+        parameters.put("reportPhoto", "true");
+        parameters.put("reportPhoto", "true");
+        parameters.put("reportPhoto", "true");
+
         parameters.put("max_pages", pageCount);
 
         TaskManager.initTask("646421", parameters);
