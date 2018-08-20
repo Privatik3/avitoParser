@@ -31,7 +31,6 @@ import parser.Ad;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class SheetsExample {
@@ -54,7 +53,7 @@ public class SheetsExample {
         }
     }
 
-    public static String generateSheet(String title, List<Ad> ads, boolean isPhoneEnable) throws IOException {
+    public static String generateSheet(String title, List<Ad> ads, ReportFilter filters) throws IOException {
 
         // 1. CREATE NEW SPREADSHEET
         Spreadsheet requestBody = new Spreadsheet();
@@ -83,7 +82,7 @@ public class SheetsExample {
         List<RowData> rData = new ArrayList<>();
 
         // -------------------- SET HEADERS --------------------
-        rData.add(getRowHeaders(isPhoneEnable));
+        rData.add(getRowHeaders(filters));
 
         // -------------------- SET VALUES --------------------
         for (Ad ad : ads) {
@@ -139,10 +138,10 @@ public class SheetsExample {
         // -------------------- MAIN SHEET ( END ) --------------------
 
         // -------------------- SORTS SHEETS --------------------
-        sheets.add(getSortSheet("Цены (сорт)", "=SORT('Объявления'!A2:O20000,2,FALSE)", isPhoneEnable));
-        sheets.add(getSortSheet("Просмотры (сорт)", "=SORT('Объявления'!A2:O20000,3,FALSE)", isPhoneEnable));
-        sheets.add(getSortSheet("Платные услуги (сорт)", "=SORT('Объявления'!A2:O20000,4,FALSE)", isPhoneEnable));
-        sheets.add(getSortSheet("Дата (сорт)", "=SORT('Объявления'!A2:O20000,6,FALSE)", isPhoneEnable));
+        sheets.add(getSortSheet("Цены (сорт)", "=SORT('Объявления'!A2:O20000,2,FALSE)", filters));
+        sheets.add(getSortSheet("Просмотры (сорт)", "=SORT('Объявления'!A2:O20000,3,FALSE)", filters));
+        sheets.add(getSortSheet("Платные услуги (сорт)", "=SORT('Объявления'!A2:O20000,4,FALSE)", filters));
+        sheets.add(getSortSheet("Дата (сорт)", "=SORT('Объявления'!A2:O20000,6,FALSE)", filters));
 
         // -------------------- STATISTIC SHEET --------------------
         sheets.add(getStatisticSheet(ads));
@@ -241,7 +240,7 @@ public class SheetsExample {
         return sheet;
     }
 
-    private static Sheet getSortSheet(String title, String formula, boolean isPhoneEnable) {
+    private static Sheet getSortSheet(String title, String formula, ReportFilter filters) {
         Sheet sheet = new Sheet();
 
         SheetProperties sheetProperties = new SheetProperties();
@@ -258,7 +257,7 @@ public class SheetsExample {
         List<RowData> rData = new ArrayList<>();
 
         // -------------------- SET HEADERS --------------------
-        rData.add(getRowHeaders(isPhoneEnable));
+        rData.add(getRowHeaders(filters));
 
         // -------------------- SET VALUES --------------------
         RowData rowVal = new RowData();
@@ -280,7 +279,7 @@ public class SheetsExample {
         return sheet;
     }
 
-    private static RowData getRowHeaders(boolean isPhoneEnable) {
+    private static RowData getRowHeaders(ReportFilter filters) {
         RowData rowData = new RowData();
         List<CellData> clHeaders = new ArrayList<>();
 
@@ -293,8 +292,7 @@ public class SheetsExample {
         clHeaders.add(getCellData("Фото (шт)"));
         clHeaders.add(getCellData("Текст (описание)"));
         clHeaders.add(getCellData("Кол-во знаков"));
-        if (isPhoneEnable)
-            clHeaders.add(getCellData("Телефон"));
+        clHeaders.add(getCellData("Телефон"));
         clHeaders.add(getCellData("Имя продавца"));
         clHeaders.add(getCellData("ID продавца"));
         clHeaders.add(getCellData("История продавца"));
