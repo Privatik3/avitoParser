@@ -25,6 +25,12 @@ public class Ad {
     private String seller;
     private String sellerId;
 
+    private String dateApplication;
+    private String viewsTenDay;
+    private String viewsAverageTenDay;
+
+
+
     public Ad(PageInfo info) {
         this.id = info.getId();
         this.url = info.getUrl();
@@ -35,6 +41,30 @@ public class Ad {
         this.isVip = info.getVip();
         this.isUrgent = info.getUrgent();
         this.isUpped = info.getUpped();
+    }
+
+    public String getDateApplication() {
+        return dateApplication;
+    }
+
+    public void setDateApplication(String dateApplication) {
+        this.dateApplication = dateApplication;
+    }
+
+    public String getViewsTenDay() {
+        return viewsTenDay;
+    }
+
+    public void setViewsTenDay(String viewsTenDay) {
+        this.viewsTenDay = viewsTenDay;
+    }
+
+    public String getViewsAverageTenDay() {
+        return viewsAverageTenDay;
+    }
+
+    public void setViewsAverageTenDay(String viewsAverageTenDay) {
+        this.viewsAverageTenDay = viewsAverageTenDay;
     }
 
     public Integer getPosition() {
@@ -210,6 +240,9 @@ public class Ad {
         this.quantityText = info.getQuantityText();
         this.seller = info.getSeller();
         this.sellerId = info.getSellerId();
+        this.dateApplication = "тест";
+        this.viewsTenDay= "тест";
+        this.viewsAverageTenDay= "тест";
     }
 
     @Override
@@ -234,7 +267,9 @@ public class Ad {
 //                ", text='" + text + '\'' +
                 ", quantityText='" + quantityText + '\'' +
                 ", seller='" + seller + '\'' +
-                ", sellerId='" + sellerId + '\'' +
+                ", dateApplication='" + dateApplication + '\'' +
+                ", viewsTenDay='" + viewsTenDay + '\'' +
+                ", viewsAverageTenDay='" + viewsAverageTenDay + '\'' +
                 '}';
     }
 }

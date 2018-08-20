@@ -74,7 +74,7 @@ public class Task {
         result.setDate(param.containsKey("date"));
         param.remove("date");
 
-        result.setPhoto(param.containsKey("phone"));
+        result.setPhone(param.containsKey("phone"));
         param.remove("phone");
 
         return result;
@@ -138,9 +138,6 @@ public class Task {
 
             // API
 //            DbManager.saveHistory(new History(ip, token, title, result.size(), endTime, resultLink));
-
-            for (Ad ad : resultList)
-                System.out.println(ad);
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -87,6 +87,149 @@ public class SheetsExample {
         // -------------------- SET VALUES --------------------
         for (Ad ad : ads) {
 
+            RowData rowVal = new RowData();
+            List<CellData> clValues = new ArrayList<>();
+
+            String titleName = "";
+            try {
+                titleName = ad.getTitle();
+            } catch (Exception ignore) {}
+            clValues.add(getCellData(titleName));
+
+            String price = "";
+            try {
+                price = ad.getPrice();
+            } catch (Exception ignore) {}
+            clValues.add(getCellData(price));
+
+            String services = "";
+            try {
+                if (ad.getPremium()) {
+                    services = services + "1 ";
+                }
+                if (ad.getVip()) {
+                    services = services + "2 ";
+                }
+                if (ad.getUrgent()) {
+                    services = services + "3 ";
+                }
+                if (ad.getUpped()) {
+                    services = services + "4 ";
+                }
+            } catch (Exception ignore) {}
+            clValues.add(getCellData(services));
+
+            String address = "";
+            try {
+                address = ad.getAddress();
+            } catch (Exception ignore) {}
+            clValues.add(getCellData(address));
+
+            String sellerId = "";
+            try {
+                sellerId = ad.getSellerId();
+            } catch (Exception ignore) {}
+            clValues.add(getCellData(sellerId));
+
+            String url = "";
+            try {
+                url = ad.getUrl();
+            } catch (Exception ignore) {}
+            clValues.add(getCellData(url));
+
+            String views = "";
+            try {
+                views = ad.getViews();
+            } catch (Exception ignore) {}
+            clValues.add(getCellData(views));
+
+            String dailyViews = "";
+            try {
+                dailyViews = ad.getDailyViews();
+            } catch (Exception ignore) {}
+            clValues.add(getCellData(dailyViews));
+
+            String dateApplication = "";
+            try {
+                dateApplication = ad.getDateApplication();
+            } catch (Exception ignore) {}
+            clValues.add(getCellData(dateApplication));
+
+            String viewsTenDay = "";
+            try {
+                viewsTenDay = ad.getViewsTenDay();
+            } catch (Exception ignore) {}
+            clValues.add(getCellData(viewsTenDay));
+
+            String viewsAverageTenDay = "";
+            try {
+                viewsAverageTenDay = ad.getViewsAverageTenDay();
+            } catch (Exception ignore) {}
+            clValues.add(getCellData(viewsAverageTenDay));
+
+
+            if (filters.isPhoto()) {
+                String numberPictures = "";
+                try {
+                    numberPictures = ad.getNumberPictures();
+                } catch (Exception ignore) {}
+                clValues.add(getCellData(numberPictures));
+            }
+
+            if (filters.isDescription()) {
+                String text = "";
+                try {
+                    text = ad.getText();
+                } catch (Exception ignore) {}
+                clValues.add(getCellData(text));
+            }
+
+            if (filters.isDescriptionLength()) {
+                String quantityText = "";
+                try {
+                    quantityText = ad.getQuantityText();
+                } catch (Exception ignore) {}
+                clValues.add(getCellData(quantityText));
+            }
+
+            if (filters.isSellerName()) {
+                String seller = "";
+                try {
+                    seller = ad.getSeller();
+                } catch (Exception ignore) {}
+                clValues.add(getCellData(seller));
+            }
+
+
+            if (filters.isPosition()) {
+                Integer position = 0;
+                try {
+                    position = ad.getPosition();
+                } catch (Exception ignore) {}
+                clValues.add(getCellData(position));
+            }
+
+            if (filters.isDate()) {
+                String data = "";
+                try {
+                    data = ad.getData();
+                } catch (Exception ignore) {}
+                clValues.add(getCellData(data));
+            }
+
+
+            try {
+//                if (filters.isPhone())
+                  //TODO телефон
+            } catch (Exception ignore) {}
+
+
+
+
+            rowVal.setValues(clValues);
+            rData.add(rowVal);
+
+
             /*try {
                 RowData rowVal = new RowData();
                 List<CellData> clValues = new ArrayList<>();
@@ -129,6 +272,7 @@ public class SheetsExample {
             } catch (Exception e) {
                 e.printStackTrace();
             }*/
+
         }
         // -------------------- SET VALUES ( END ) --------------------
 
@@ -285,19 +429,36 @@ public class SheetsExample {
 
         clHeaders.add(getCellData("Заголовок"));
         clHeaders.add(getCellData("Цена"));
-        clHeaders.add(getCellData("Количество просмотров"));
         clHeaders.add(getCellData("Платные услуги"));
         clHeaders.add(getCellData("Адрес"));
-        clHeaders.add(getCellData("Дата размещения"));
-        clHeaders.add(getCellData("Фото (шт)"));
-        clHeaders.add(getCellData("Текст (описание)"));
-        clHeaders.add(getCellData("Кол-во знаков"));
-        clHeaders.add(getCellData("Телефон"));
-        clHeaders.add(getCellData("Имя продавца"));
         clHeaders.add(getCellData("ID продавца"));
-        clHeaders.add(getCellData("История продавца"));
         clHeaders.add(getCellData("Ссылка"));
-        clHeaders.add(getCellData("Номер объявления"));
+        clHeaders.add(getCellData("Просмотры ( все )"));
+        clHeaders.add(getCellData("Просомтров за день"));
+        clHeaders.add(getCellData("Дата подачи объявления"));
+        clHeaders.add(getCellData("Просмотры за 10 дней ( сума )"));
+        clHeaders.add(getCellData("Просмотры сред.знач. за 10 дней"));
+        if (filters.isPhoto()) {
+            clHeaders.add(getCellData("Фото (шт)"));
+        }
+        if (filters.isDescription()) {
+            clHeaders.add(getCellData("Текст (описание)"));
+        }
+        if (filters.isDescriptionLength()) {
+            clHeaders.add(getCellData("Кол-во знаков"));
+        }
+        if (filters.isSellerName()) {
+            clHeaders.add(getCellData("Имя продавца"));
+        }
+        if (filters.isPosition()) {
+            clHeaders.add(getCellData("Номер объявления"));
+        }
+        if (filters.isDate()) {
+            clHeaders.add(getCellData("Дата размещения"));
+        }
+        if (filters.isPhone()) {
+            clHeaders.add(getCellData("Телефон"));
+        }
 
         for (CellData cell : clHeaders) {
             CellFormat format = new CellFormat();

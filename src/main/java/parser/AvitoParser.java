@@ -39,6 +39,12 @@ public class AvitoParser {
                 }catch (Exception ignored) {}
                 item.setId(id);
 
+                String finalId = id;
+                if (result.stream().anyMatch(e -> e.getId().equals(finalId))) {
+                    itemPosition--;
+                    continue;
+                }
+
                 String url = "";
                 String urlFull = "";
                 try {
@@ -196,6 +202,9 @@ public class AvitoParser {
             String sellerId = "";
             try {
                 seller = doc.select(".item-view-right .seller-info-name a").get(0).text();
+                if (seller.isEmpty()) {
+                    seller = doc.select(".seller-info-prop_short_margin .seller-info-value").get(0).text();
+                }
                 sellerId = doc.select(".item-view-right .seller-info-name a").attr("href");
                 if (sellerId.contains("id=")) {
                     sellerId = sellerId.split("id=")[1];
