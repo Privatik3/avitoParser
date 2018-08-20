@@ -156,7 +156,7 @@ public class RequestManager {
                             entity = response.getEntity();
                             String body = EntityUtils.toString(entity, "UTF-8");
 
-                            if (body.contains("499bdc75d3636c55")) {
+                            if (body.contains("499bdc75d3636c55") || body.contains("601e767b7f3255ac")) {
                                 task.setHtml(body);
                                 result.add(task);
                                 goodProxy.add(proxy);

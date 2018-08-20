@@ -104,8 +104,8 @@ public class Task {
             log.info("Формируем начальный список результатов");
             for (PageInfo info : pageInfo) {
                 resultList.add(new Ad(info));
-
-                reqTasks.add(new RequestTask(info.getId(), info.getUrl(), ReqTaskType.ITEM));
+//                reqTasks.add(new RequestTask(info.getId(), info.getUrl(), ReqTaskType.ITEM));
+                reqTasks.add(new RequestTask(info.getId(), info.getUrl().replace("www", "m"), ReqTaskType.ITEM));
             }
             pageInfo.clear();
 

@@ -36,7 +36,7 @@ public class MainTest {
         system.setUseParentHandlers(false);
         system.info("-------------------------------------------------");
 
-        String pageCount = "30"; // Количество страниц
+        String pageCount = "1"; // Количество страниц
 
         HashMap<String, String> parameters = new HashMap<>();
         parameters.put("category_id", "14");
