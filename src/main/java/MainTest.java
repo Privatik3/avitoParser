@@ -44,10 +44,13 @@ public class MainTest {
         parameters.put("s", "101");
         parameters.put("s_trg", "3");
 
-        parameters.put("reportPhoto", "true");
-        parameters.put("reportPhoto", "true");
-        parameters.put("reportPhoto", "true");
-        parameters.put("reportPhoto", "true");
+        parameters.put("photo", "true");
+        parameters.put("description", "true");
+        parameters.put("descriptionLength", "true");
+        parameters.put("sellerName", "true");
+        parameters.put("position", "true");
+        parameters.put("date", "true");
+        parameters.put("phone", "true");
 
         parameters.put("max_pages", pageCount);
 
