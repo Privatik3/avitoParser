@@ -1,6 +1,7 @@
 package manager;
 
 import db.DBHandler;
+import google.ReportFilter;
 import google.SheetsExample;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
@@ -32,6 +33,7 @@ public class Task {
     private String ip = "";
     private ArrayList<RequestTask> reqTasks;
     private List<Ad> resultList = new ArrayList<>();
+    private ReportFilter reportFilter;
 
     public Task(String token, HashMap<String, String> param) throws IOException {
         this.token = token;
@@ -47,7 +49,35 @@ public class Task {
             param.remove("title");
         }
 
+        reportFilter = getReportFilters(param);
         reqTasks = initTasks(param);
+    }
+
+    private ReportFilter getReportFilters(HashMap<String, String> param) {
+        ReportFilter result = new ReportFilter();
+
+        result.setPhoto(param.containsKey("photo"));
+        param.remove("photo");
+
+        result.setDescription(param.containsKey("description"));
+        param.remove("description");
+
+        result.setDescriptionLength(param.containsKey("descriptionLength"));
+        param.remove("descriptionLength");
+
+        result.setSellerName(param.containsKey("sellerName"));
+        param.remove("sellerName");
+
+        result.setPosition(param.containsKey("position"));
+        param.remove("position");
+
+        result.setDate(param.containsKey("date"));
+        param.remove("date");
+
+        result.setPhoto(param.containsKey("phone"));
+        param.remove("phone");
+
+        return result;
     }
 
     public String getToken() {
@@ -97,7 +127,6 @@ public class Task {
             }
             itemInfo.clear();
 
-
             int endTime = (int) (new Date().getTime() - (startTime));
             log.info("-------------------------------------------------");
             log.info("ПОЛНОЕ ВРЕМЯ ВЫПОЛНЕНИЯ: " + endTime + " ms");
@@ -105,7 +134,7 @@ public class Task {
 
             RequestManager.closeClient();
             DBHandler.close();
-//            this.resultLink = SheetsExample.generateSheet(title, resultList, false);
+            this.resultLink = SheetsExample.generateSheet(title, resultList, reportFilter);
 
             // API
 //            DbManager.saveHistory(new History(ip, token, title, result.size(), endTime, resultLink));
