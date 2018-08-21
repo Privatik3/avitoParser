@@ -122,15 +122,17 @@ public class AvitoParser {
         for (RequestTask task : tasks) {
 //            Document doc = Jsoup.parse(task.getHtml());
 
-            Pattern p = Pattern.compile("window.__initialData__ =\\s(.*)\\s\\|\\|");
-            Matcher m = p.matcher(task.getHtml());
+            String json = "{}";
+            try {
+                Pattern p = Pattern.compile("window.__initialData__ =\\s(.*)\\s\\|\\|");
+                Matcher m = p.matcher(task.getHtml());
 
-            String json;
-            if (m.find())
-                json = m.group(1);
-            else
-                continue;
+                if (m.find())
+                    json = m.group(1);
+                else
+                    continue;
 
+            } catch (Exception ignore) {}
             JSONObject ob = new JSONObject(json);
 
             ItemInfo item = new ItemInfo();
@@ -216,6 +218,35 @@ public class AvitoParser {
             }
             }catch (Exception ignored) {}
             item.setHasStats(hasStats);
+
+            // Здесь уже норм код
+            result.add(item);
+        }
+
+        log.info("Время затраченое на обработку: " + (new Date().getTime() - start) + " ms");
+        return result;
+    }
+
+    public static List<StatInfo> parseStats(List<RequestTask> tasks) {
+
+        log.info("-------------------------------------------------");
+        log.info("Начинаем обработку страниц обьявлений");
+
+        long start = new Date().getTime();
+
+        List<StatInfo> result = new ArrayList<>();
+        for (RequestTask task : tasks) {
+            Document doc = Jsoup.parse(task.getHtml());
+
+            StatInfo item = new StatInfo();
+            item.setId(task.getId());
+            // Здесь гавнярит Александр
+
+
+            // Стата просмотров хранится в json ( небольшая помощь )
+            String json = doc.select("div.item-stats__chart").attr("data-chart");
+            JSONObject chart = new JSONObject(json);
+
 
             // Здесь уже норм код
             result.add(item);

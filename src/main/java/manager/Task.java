@@ -8,16 +8,11 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import parser.Ad;
-import parser.AvitoParser;
-import parser.ItemInfo;
-import parser.PageInfo;
+import parser.*;
 import utility.RequestManager;
 
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -126,6 +121,34 @@ public class Task {
                 first.ifPresent(ad -> ad.addPageInfo(info));
             }
             itemInfo.clear();
+
+            if (reportFilter.isDate()) {
+                log.info("-------------------------------------------------");
+                log.info("Выполняем запрос на выкачку страниц статистики");
+                for (Ad ad : resultList) {
+                    if (!ad.hasStats()) continue;
+
+                    String url = "https://www.avito.ru/items/stat/" + ad.getId() + "?step=0";
+                    reqTasks.add(new RequestTask(ad.getId(), url, ReqTaskType.STATS));
+                }
+
+                List<RequestTask> statsHtml = RequestManager.execute(reqTasks, DEBUG_MODE);
+                reqTasks.clear();
+
+                List<StatInfo> statInfo = AvitoParser.parseStats(statsHtml);
+                statsHtml.clear();
+
+                log.info("-------------------------------------------------");
+                log.info("Дополняем результат, статистекой просмотров");
+                for (StatInfo info : statInfo) {
+                    String infoID = info.getId();
+
+                    Optional<Ad> first = resultList.stream().filter(itm -> itm.getId().equals(infoID)).findFirst();
+                    first.ifPresent(ad -> ad.addStatInfo(info));
+                }
+                statInfo.clear();
+            }
+
 
             int endTime = (int) (new Date().getTime() - (startTime));
             log.info("-------------------------------------------------");

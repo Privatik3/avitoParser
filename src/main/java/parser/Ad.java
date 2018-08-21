@@ -45,7 +45,7 @@ public class Ad {
         this.isUpped = info.getUpped();
     }
 
-    public Boolean getHasStats() {
+    public Boolean hasStats() {
         return hasStats;
     }
 
@@ -263,6 +263,10 @@ public class Ad {
         this.viewsAverageTenDay= "тест";
         this.phone= info.getPhone();
         this.hasStats= info.getHasStats();
+    }
+
+    public void addStatInfo(StatInfo info) {
+
     }
 
     @Override

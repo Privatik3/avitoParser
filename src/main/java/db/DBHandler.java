@@ -23,7 +23,7 @@ public class DBHandler {
             conn.setAutoCommit(true);
 
             String[] tags = new String[] {"script", "a", "abbr", "address", "area", "article", "aside", "audio", "b", "base", "bdi", "bdo", "blockquote", "body", "br", "button", "canvas", "caption", "cite", "code", "col", "colgroup", "data", "datalist", "dd", "del", "details", "dfn", "dialog", "div", "dl", "dt", "em", "embed", "fieldset", "figcaption", "figure", "footer", "form", "h1", "h2", "h3", "h4", "h5", "h6", "head", "header", "hgroup", "hr", "html", "i", "iframe", "img", "input", "ins", "kbd", "keygen", "label", "legend", "li", "main", "map", "mark", "math", "menu", "menuitem", "meter", "nav", "noscript", "object", "ol", "optgroup", "option", "output", "p", "param", "picture", "pre", "progress", "q", "rb", "rp", "rt", "rtc", "ruby", "s", "samp", "section", "select", "slot", "small", "source", "span", "strong", "sub", "summary", "sup", "svg", "table", "tbody", "td", "template", "textarea", "tfoot", "th", "thead", "time", "title", "tr", "track", "u", "ul", "var", "video", "wbr"};
-            String[] attrs = new String[] {"id", "class", "data-config", "data-item-id", "href", "data-marker"};
+            String[] attrs = new String[] {"id", "class", "data-config", "data-item-id", "href", "data-marker", "data-chart"};
 
             whitelist.addTags(tags);
             for (String tag : tags)
@@ -40,6 +40,10 @@ public class DBHandler {
 
     public static void addAvitoPages(ArrayList<RequestTask> items) {
         addToTable(items, "AVITO_PAGES");
+    }
+
+    public static void addAvitoStats(ArrayList<RequestTask> items) {
+        addToTable(items, "AVITO_STATS");
     }
 
     private static void addToTable(ArrayList<RequestTask> items, String tabName) {
@@ -60,7 +64,7 @@ public class DBHandler {
             insertStatement.executeBatch();
         } catch (Exception e) {
             log.info("-------------------------------------------------");
-            log.log(Level.SEVERE, "Не удалось занести Amazon Items в базу");
+            log.log(Level.SEVERE, "Не удалось добавить записи в базу");
             log.log(Level.SEVERE, "Exception: " + e.getMessage());
         } finally {
             items.clear();
@@ -82,6 +86,10 @@ public class DBHandler {
 
     public static List<RequestTask> selectAllPages() {
         return select("AVITO_PAGES");
+    }
+
+    public static List<RequestTask> selectAllStats() {
+        return select("AVITO_STATS");
     }
 
     private static List<RequestTask> select(String tabName) {
@@ -119,6 +127,10 @@ public class DBHandler {
 
     public static void clearAvitoPages() {
         clearTable("AVITO_PAGES");
+    }
+
+    public static void clearAvitoStats() {
+        clearTable("AVITO_STATS");
     }
 
     private static void clearTable(String tabName) {

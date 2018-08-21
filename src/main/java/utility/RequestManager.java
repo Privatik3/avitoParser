@@ -67,6 +67,8 @@ public class RequestManager {
                     return DBHandler.selectAllItems();
                 case CATEGORY:
                     return DBHandler.selectAllPages();
+                case STATS:
+                    return DBHandler.selectAllStats();
             }
         }
 
@@ -96,6 +98,9 @@ public class RequestManager {
                 break;
             case CATEGORY:
                 DBHandler.clearAvitoPages();
+                break;
+            case STATS:
+                DBHandler.clearAvitoStats();
                 break;
         }
 
@@ -156,7 +161,7 @@ public class RequestManager {
                             entity = response.getEntity();
                             String body = EntityUtils.toString(entity, "UTF-8");
 
-                            if (body.contains("499bdc75d3636c55") || body.contains("601e767b7f3255ac")) {
+                            if (body.contains("499bdc75d3636c55") || body.contains("601e767b7f3255ac") || body.contains("data-chart")) {
                                 task.setHtml(body);
                                 result.add(task);
                                 goodProxy.add(proxy);
@@ -179,7 +184,7 @@ public class RequestManager {
 
             }
 
-            cdl.await(12, TimeUnit.SECONDS);
+            cdl.await(10, TimeUnit.SECONDS);
 
             taskMultiply.removeAll(result);
             if (resultStatus == result.size() && taskMultiply.size() != 0 && failCount > 3) {
@@ -204,6 +209,9 @@ public class RequestManager {
                     case CATEGORY:
                         DBHandler.addAvitoPages(items);
                         break;
+                    case STATS:
+                        DBHandler.addAvitoStats(items);
+                        break;
                 }
             }
         }
@@ -211,7 +219,7 @@ public class RequestManager {
         log.info("-------------------------------------------------");
         log.info("Закончили парсить, затраченное время: " + (new Date().getTime() - startTime) + " ms");
 
-        return type == ReqTaskType.ITEM ? DBHandler.selectAllItems() : DBHandler.selectAllPages();
+        return type == ReqTaskType.ITEM ? DBHandler.selectAllItems() : (type == ReqTaskType.CATEGORY ? DBHandler.selectAllPages() : DBHandler.selectAllStats());
     }
 
     public static void closeClient() throws IOException {
