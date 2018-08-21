@@ -217,12 +217,13 @@ public class SheetsExample {
                 clValues.add(getCellData(data));
             }
 
-
-            try {
-//                if (filters.isPhone())
-                  //TODO телефон
-            } catch (Exception ignore) {}
-
+            if (filters.isPhone()) {
+                String phone = "";
+                try {
+                phone = ad.getPhone();
+                } catch (Exception ignore) {}
+                clValues.add(getCellData(phone));
+            }
 
 
 

@@ -24,6 +24,8 @@ public class Ad {
     private String quantityText;
     private String seller;
     private String sellerId;
+    private String phone;
+    private Boolean hasStats;
 
     private String dateApplication;
     private String viewsTenDay;
@@ -41,6 +43,22 @@ public class Ad {
         this.isVip = info.getVip();
         this.isUrgent = info.getUrgent();
         this.isUpped = info.getUpped();
+    }
+
+    public Boolean getHasStats() {
+        return hasStats;
+    }
+
+    public void setHasStats(Boolean hasStats) {
+        this.hasStats = hasStats;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
     }
 
     public String getDateApplication() {
@@ -243,6 +261,8 @@ public class Ad {
         this.dateApplication = "тест";
         this.viewsTenDay= "тест";
         this.viewsAverageTenDay= "тест";
+        this.phone= info.getPhone();
+        this.hasStats= info.getHasStats();
     }
 
     @Override

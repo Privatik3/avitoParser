@@ -15,6 +15,24 @@ public class ItemInfo {
     private String quantityText;
     private String seller;
     private String sellerId;
+    private String phone;
+    private Boolean hasStats;
+
+    public Boolean getHasStats() {
+        return hasStats;
+    }
+
+    public void setHasStats(Boolean hasStats) {
+        this.hasStats = hasStats;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
 
     public String getSeller() {
         return seller;

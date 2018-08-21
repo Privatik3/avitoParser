@@ -1,5 +1,8 @@
 package parser;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.sun.xml.internal.bind.v2.TODO;
+import jdk.nashorn.internal.parser.JSONParser;
 import manager.RequestTask;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -7,9 +10,12 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.net.URLDecoder;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class AvitoParser {
 
@@ -114,7 +120,18 @@ public class AvitoParser {
 
         ArrayList<ItemInfo> result = new ArrayList<>();
         for (RequestTask task : tasks) {
-            Document doc = Jsoup.parse(task.getHtml());
+//            Document doc = Jsoup.parse(task.getHtml());
+
+            Pattern p = Pattern.compile("window.__initialData__ =\\s(.*)\\s\\|\\|");
+            Matcher m = p.matcher(task.getHtml());
+
+            String json;
+            if (m.find())
+                json = m.group(1);
+            else
+                continue;
+
+            JSONObject ob = new JSONObject(json);
 
             ItemInfo item = new ItemInfo();
             item.setId(task.getId());
@@ -122,101 +139,83 @@ public class AvitoParser {
 
             String title = "";
             try {
-                title = doc.select(".title-info-title-text").text();
-            }catch (Exception ignored) {}
+                title = ob.getJSONObject("item").getJSONObject("currentItem").getString("title");
+            } catch (Exception ignored) {}
             item.setTitle(title);
 
             String price = "";
             try {
-                price = doc.select(".item-view-right #price-value .js-item-price").text();
-            }catch (Exception ignored) {}
+                price = ob.getJSONObject("item").getJSONObject("currentItem").getJSONObject("price").getString("value");
+            } catch (Exception ignored) {}
             item.setPrice(price);
 
-            String views = "";
+            int views = 0;
             try {
-                views = doc.select(".title-info-views").text();
-               views = views.split("\\(")[0];
-            }catch (Exception ignored) {}
-            item.setViews(views);
+                views = ob.getJSONObject("item").getJSONObject("currentItem").getJSONObject("stats").getJSONObject("views").getInt("total");
+            } catch (Exception ignored) {}
+            item.setViews(String.valueOf(views));
 
-            String dailyViews = "";
+            int dailyViews = 0;
             try {
-                dailyViews = doc.select(".title-info-views").text();
-               dailyViews = dailyViews.split("\\(\\+")[1];
-               dailyViews = dailyViews.split("\\)")[0];
-            }catch (Exception ignored) {}
-            item.setDailyViews(dailyViews);
+                dailyViews = ob.getJSONObject("item").getJSONObject("currentItem").getJSONObject("stats").getJSONObject("views").getInt("today");
+            } catch (Exception ignored) {}
+            item.setDailyViews(String.valueOf(dailyViews));
 
             String address = "";
             try {
-                Elements select = doc.select(".seller-info-label");
-                for (Element el : select) {
-                    if (el.text().contains("Адрес")) {
-                        address = el.parent().select(".seller-info-value").text();
-                    }
-                }
-            }catch (Exception ignored) {}
+                address = ob.getJSONObject("item").getJSONObject("currentItem").getString("address");
+            } catch (Exception ignored) {}
             item.setAddress(address);
 
-            String data = "";
+            String dataNew = "";
             try {
-                data = doc.select(".title-info-metadata-item").get(0).text();
-                data = data.split("размещено ")[1];
-                SimpleDateFormat format = new SimpleDateFormat("dd MMMMM " , new Locale("ru"));
-                final Date now = new Date();
-                if (data.contains("сегодня")) {
-                    data = format.format(now) + data.substring(data.indexOf("в "));
-                } else if (data.contains("вчера")) {
-                    data = format.format(new Date(now.getTime() - 60 * 60 * 24 * 1000)) + data.substring(data.indexOf("в "));
-                }
-                    String day = data.split(" ")[0];
-                    String monthData = data.split(" ")[1];
-                    String time = data.split(" ")[3];
-                    try {
-                        switch (monthData) {
-                            case "января": monthData = "01";break;case "февраля": monthData = "02";break;case "марта": monthData = "03";break;case "апреля": monthData = "04";break;case "мая": monthData = "05";break;case "июня": monthData = "06";break;case "июля": monthData = "07";break;case "августа": monthData = "08";break;case "сентября": monthData = "09";break;case "октября": monthData = "10";break;case "ноября": monthData = "11";break;case "декабря": monthData = "12";break;
-                        }
-                    } catch (Exception ignored) {
-                    }
-                    data = monthData + "-" + day + "-" + time;
-            }catch (Exception ignored) {}
-            item.setData(data);
+                long data = ob.getJSONObject("item").getJSONObject("currentItem").getLong("time");
+                dataNew = new SimpleDateFormat("yyyy.MM.dd HH:mm").format(new Date(data * 1000L));
+            } catch (Exception ignored) {}
+            item.setData(String.valueOf(dataNew));
 
             String numberPictures = "";
             try {
-               Elements numberPicturesEl = doc.select(".gallery-list-wrapper li");
-                numberPictures = String.valueOf(numberPicturesEl.size());
-            }catch (Exception ignored) {}
+                numberPictures = String.valueOf(ob.getJSONObject("item").getJSONObject("currentItem").getJSONArray("images").length());
+            } catch (Exception ignored) {}
             item.setNumberPictures(numberPictures);
 
-            String text = "";
+            String description = "";
             String quantityText = "";
             try {
-                text = doc.select(".item-description div").text();
-                quantityText = String.valueOf(text.length());
-            }catch (Exception ignored) {}
-            item.setText(text);
+                description = ob.getJSONObject("item").getJSONObject("currentItem").getString("description").replaceAll("\n", " ");
+                quantityText = String.valueOf(description.length());
+            } catch (Exception ignored) {}
+            item.setText(description);
             item.setQuantityText(quantityText);
 
             String seller = "";
-            String sellerId = "";
             try {
-                seller = doc.select(".item-view-right .seller-info-name a").get(0).text();
-                if (seller.isEmpty()) {
-                    seller = doc.select(".seller-info-prop_short_margin .seller-info-value").get(0).text();
-                }
-                sellerId = doc.select(".item-view-right .seller-info-name a").attr("href");
-                if (sellerId.contains("id=")) {
-                    sellerId = sellerId.split("id=")[1];
-                    sellerId = sellerId.split("&")[0];
-                }
-                if (sellerId.contains("Id=")) {
-                    sellerId = sellerId.split("Id=")[1];
-                }
-            }catch (Exception ignored) {}
+                seller = ob.getJSONObject("item").getJSONObject("currentItem").getJSONObject("seller").getString("name");
+            } catch (Exception ignored) {}
             item.setSeller(seller);
-            item.setSellerId(sellerId);
 
+            int sellerId = 0;
+            try {
+                sellerId = ob.getJSONObject("item").getJSONObject("currentItem").getInt("id");
+            }catch (Exception ignored) {}
+            item.setSellerId(String.valueOf(sellerId));
+
+            String phone = "";
+            try {
+                JSONObject contactList = ob.getJSONObject("item").getJSONObject("currentItem").getJSONObject("contacts").getJSONArray("list").getJSONObject(0);
+                phone = contactList.getJSONObject("value").getString("uri");
+                phone = URLDecoder.decode(phone.substring(phone.lastIndexOf("=") + 1));
+            } catch (Exception ignored) {}
+            item.setPhone(phone);
+
+            Boolean hasStats = true;
+            try {
+            if (views == dailyViews) {
+                hasStats = false;
+            }
+            }catch (Exception ignored) {}
+            item.setHasStats(hasStats);
 
             // Здесь уже норм код
             result.add(item);
