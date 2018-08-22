@@ -5,6 +5,7 @@ import manager.RequestTask;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
 
+import java.io.File;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,7 +20,7 @@ public class DBHandler {
 
     static {
         try {
-            conn = DriverManager.getConnection("jdbc:h2:C:/Developers/avitoParser/cache");
+            conn = DriverManager.getConnection("jdbc:h2:" + new File(".").getCanonicalPath().replace("\\", "/") +"/cache");
             conn.setAutoCommit(true);
 
             String[] tags = new String[] {"script", "a", "abbr", "address", "area", "article", "aside", "audio", "b", "base", "bdi", "bdo", "blockquote", "body", "br", "button", "canvas", "caption", "cite", "code", "col", "colgroup", "data", "datalist", "dd", "del", "details", "dfn", "dialog", "div", "dl", "dt", "em", "embed", "fieldset", "figcaption", "figure", "footer", "form", "h1", "h2", "h3", "h4", "h5", "h6", "head", "header", "hgroup", "hr", "html", "i", "iframe", "img", "input", "ins", "kbd", "keygen", "label", "legend", "li", "main", "map", "mark", "math", "menu", "menuitem", "meter", "nav", "noscript", "object", "ol", "optgroup", "option", "output", "p", "param", "picture", "pre", "progress", "q", "rb", "rp", "rt", "rtc", "ruby", "s", "samp", "section", "select", "slot", "small", "source", "span", "strong", "sub", "summary", "sup", "svg", "table", "tbody", "td", "template", "textarea", "tfoot", "th", "thead", "time", "title", "tr", "track", "u", "ul", "var", "video", "wbr"};
