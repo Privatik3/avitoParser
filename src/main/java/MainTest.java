@@ -44,6 +44,9 @@ public class MainTest {
         parameters.put("s", "101");
         parameters.put("s_trg", "3");
 
+        parameters.put("title", "Авито - Транспорт - Мотоциклы и мототехника - 2018-08-22");
+        parameters.put("max_pages", pageCount);
+
         parameters.put("photo", "true");
         parameters.put("description", "true");
         parameters.put("descriptionLength", "true");
@@ -52,7 +55,8 @@ public class MainTest {
         parameters.put("date", "true");
         parameters.put("phone", "true");
 
-        parameters.put("max_pages", pageCount);
+        parameters.put("ip", "176.105.204.178");
+        parameters.put("token", "xiiiangel");
 
         TaskManager.initTask("646421", parameters);
 
