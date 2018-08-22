@@ -32,6 +32,7 @@ import parser.Ad;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class SheetsExample {
 
@@ -96,11 +97,27 @@ public class SheetsExample {
             } catch (Exception ignore) {}
             clValues.add(getCellData(titleName));
 
-            String price = "";
             try {
-                price = ad.getPrice();
+                String price = ad.getPrice();
+                   try {
+                       int priceInt = Integer.parseInt(price.replaceAll(" " , ""));
+                       clValues.add(getCellData(priceInt));
+                   }  catch (Exception ignored) {
+                       clValues.add(getCellData(price));
+                   }
             } catch (Exception ignore) {}
-            clValues.add(getCellData(price));
+
+            String views = "";
+            try {
+                views = ad.getViews();
+            } catch (Exception ignore) {}
+            clValues.add(getCellData(Integer.parseInt(views)));
+
+            String dailyViews = "";
+            try {
+                dailyViews = ad.getDailyViews();
+            } catch (Exception ignore) {}
+            clValues.add(getCellData(dailyViews));
 
             String services = "";
             try {
@@ -125,48 +142,18 @@ public class SheetsExample {
             } catch (Exception ignore) {}
             clValues.add(getCellData(address));
 
-            String sellerId = "";
+
+            String data = "";
             try {
-                sellerId = ad.getSellerId();
+                data = ad.getData();
             } catch (Exception ignore) {}
-            clValues.add(getCellData(sellerId));
+            clValues.add(getCellData(data));
 
             String url = "";
             try {
                 url = ad.getUrl();
             } catch (Exception ignore) {}
             clValues.add(getCellData(url));
-
-            String views = "";
-            try {
-                views = ad.getViews();
-            } catch (Exception ignore) {}
-            clValues.add(getCellData(views));
-
-            String dailyViews = "";
-            try {
-                dailyViews = ad.getDailyViews();
-            } catch (Exception ignore) {}
-            clValues.add(getCellData(dailyViews));
-
-            String dateApplication = "";
-            try {
-                dateApplication = ad.getDateApplication();
-            } catch (Exception ignore) {}
-            clValues.add(getCellData(dateApplication));
-
-            String viewsTenDay = "";
-            try {
-                viewsTenDay = ad.getViewsTenDay();
-            } catch (Exception ignore) {}
-            clValues.add(getCellData(viewsTenDay));
-
-            String viewsAverageTenDay = "";
-            try {
-                viewsAverageTenDay = ad.getViewsAverageTenDay();
-            } catch (Exception ignore) {}
-            clValues.add(getCellData(viewsAverageTenDay));
-
 
             if (filters.isPhoto()) {
                 String numberPictures = "";
@@ -176,6 +163,7 @@ public class SheetsExample {
                 clValues.add(getCellData(numberPictures));
             }
 
+
             if (filters.isDescription()) {
                 String text = "";
                 try {
@@ -183,6 +171,7 @@ public class SheetsExample {
                 } catch (Exception ignore) {}
                 clValues.add(getCellData(text));
             }
+
 
             if (filters.isDescriptionLength()) {
                 String quantityText = "";
@@ -192,12 +181,28 @@ public class SheetsExample {
                 clValues.add(getCellData(quantityText));
             }
 
+
             if (filters.isSellerName()) {
                 String seller = "";
                 try {
                     seller = ad.getSeller();
                 } catch (Exception ignore) {}
                 clValues.add(getCellData(seller));
+            }
+
+            String sellerId = "";
+            try {
+                sellerId = ad.getSellerId();
+            } catch (Exception ignore) {}
+            clValues.add(getCellData(sellerId));
+
+
+            if (filters.isPhone()) {
+                String phone = "";
+                try {
+                    phone = ad.getPhone();
+                } catch (Exception ignore) {}
+                clValues.add(getCellData(phone));
             }
 
 
@@ -209,22 +214,35 @@ public class SheetsExample {
                 clValues.add(getCellData(position));
             }
 
+
             if (filters.isDate()) {
-                String data = "";
+                String dateApplication = "";
                 try {
-                    data = ad.getData();
-                } catch (Exception ignore) {}
-                clValues.add(getCellData(data));
-            }
+                    dateApplication = ad.getDateApplication();
+                } catch (Exception ignore) {
+                }
+                clValues.add(getCellData(dateApplication));
 
-            if (filters.isPhone()) {
-                String phone = "";
-                try {
-                phone = ad.getPhone();
-                } catch (Exception ignore) {}
-                clValues.add(getCellData(phone));
-            }
 
+                if (ad.hasStats()) {
+                    String viewsTenDay = "0";
+                    try {
+                        viewsTenDay = ad.getViewsTenDay();
+                    } catch (Exception ignore) {
+                    }
+                    clValues.add(getCellData(Integer.parseInt(viewsTenDay)));
+
+                    String viewsAverageTenDay = "0";
+                    try {
+                        viewsAverageTenDay = ad.getViewsAverageTenDay();
+                    } catch (Exception ignore) {
+                    }
+                    clValues.add(getCellData(Integer.parseInt(viewsAverageTenDay)));
+                }else {
+                    clValues.add(getCellData(0));
+                    clValues.add(getCellData(0));
+                }
+            }
 
 
             rowVal.setValues(clValues);
@@ -283,10 +301,15 @@ public class SheetsExample {
         // -------------------- MAIN SHEET ( END ) --------------------
 
         // -------------------- SORTS SHEETS --------------------
-        sheets.add(getSortSheet("Цены (сорт)", "=SORT('Объявления'!A2:O20000,2,FALSE)", filters));
-        sheets.add(getSortSheet("Просмотры (сорт)", "=SORT('Объявления'!A2:O20000,3,FALSE)", filters));
-        sheets.add(getSortSheet("Платные услуги (сорт)", "=SORT('Объявления'!A2:O20000,4,FALSE)", filters));
-        sheets.add(getSortSheet("Дата (сорт)", "=SORT('Объявления'!A2:O20000,6,FALSE)", filters));
+        sheets.add(getSortSheet("Цены (сорт)", "=SORT('Объявления'!A2:R20000,2,FALSE)", filters));
+        sheets.add(getSortSheet("\uD83D\uDC41 Всего", "=SORT('Объявления'!A2:R20000;3;FALSE)", filters));
+        sheets.add(getSortSheet("Методы (сорт)", "=SORT('Объявления'!A2:R20000;5;FALSE)", filters));
+        sheets.add(getSortSheet("\uD83D\uDC41 За день", "=SORT('Объявления'!A2:R20000;4;FALSE)", filters));
+        if (filters.isDate()) {
+            sheets.add(getSortSheet("\uD83D\uDC41 10 дней", "=SORT('Объявления'!A2:R20000;17;FALSE)", filters));
+            sheets.add(getSortSheet("\uD83D\uDC41 ср. 10 дней", "=SORT('Объявления'!A2:R20000;18;FALSE)", filters));
+        }
+
 
         // -------------------- STATISTIC SHEET --------------------
         sheets.add(getStatisticSheet(ads));
@@ -325,59 +348,91 @@ public class SheetsExample {
         rData.add(new RowData().setValues(Arrays.asList(
             new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("Всего:")),
             new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("Объявлений:")),
-            new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=COUNTA('Объявления'!A2:A20000)"))
+            new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=СЧЁТЗ('Объявления'!A2:A20000)"))
+        )));
+        rData.add(new RowData());
+
+        rData.add(new RowData().setValues(Arrays.asList(
+                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("Методы продвижения:")),
+                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("4 - Поднятие")),
+                new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=СЧЁТЕСЛИМН('Объявления'!E2:E20000;\"*4*\")"))
         )));
 
         rData.add(new RowData().setValues(Arrays.asList(
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
-                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("Просмотров:")),
-                new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=SUM('Объявления'!C2:C20000)"))
+                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("3 - Выделение")),
+                new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=СЧЁТЕСЛИМН('Объявления'!E2:E20000;\"*3*\")"))
         )));
 
         rData.add(new RowData().setValues(Arrays.asList(
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
-                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("Платных услуг:")),
-                new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=COUNTIFS('Объявления'!D2:D20000;\"1\")"))
+                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("2 - VIP")),
+                new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=СЧЁТЕСЛИМН('Объявления'!E2:E20000;\"*2*\")"))
+        )));
+
+        rData.add(new RowData().setValues(Arrays.asList(
+                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("1 - Премиум")),
+                new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=СЧЁТЕСЛИМН('Объявления'!E2:E20000;\"*1*\")"))
         )));
         rData.add(new RowData());
 
         rData.add(new RowData().setValues(Arrays.asList(
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("Цена:")),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("Минимальная:")),
-                new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=MIN('Объявления'!B2:B20000)"))
+                new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=МИН('Объявления'!B2:B20000)"))
         )));
 
         rData.add(new RowData().setValues(Arrays.asList(
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("Средняя:")),
-                new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=AVERAGE('Объявления'!B2:B20000)"))
+                new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=СРЗНАЧ('Объявления'!B2:B20000)"))
         )));
 
         rData.add(new RowData().setValues(Arrays.asList(
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("Максимальная:")),
-                new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=MAX('Объявления'!B2:B20000)"))
+                new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=МАКС('Объявления'!B2:B20000)"))
         )));
         rData.add(new RowData());
 
         rData.add(new RowData().setValues(Arrays.asList(
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("Просмотры:")),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("Минимальная:")),
-                new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=MIN('Объявления'!C2:C20000)"))
+                new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=МИН('Объявления'!C2:C20000)"))
         )));
 
         rData.add(new RowData().setValues(Arrays.asList(
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("Средняя:")),
-                new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=AVERAGE('Объявления'!C2:C20000)"))
+                new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=СРЗНАЧ('Объявления'!C2:C20000)"))
         )));
 
         rData.add(new RowData().setValues(Arrays.asList(
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("Максимальная:")),
-                new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=MAX('Объявления'!C2:C20000)"))
+                new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=МАКС('Объявления'!C2:C20000)"))
         )));
+        rData.add(new RowData());
 
+        rData.add(new RowData().setValues(Arrays.asList(
+                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("Районы:"))
+        )));
+        for (String address : new HashSet<>(ads.stream().map(ad -> {
+            String address = "";
+            if (ad.getAddress().contains("м.")) {
+                address = ad.getAddress().substring(ad.getAddress().indexOf("м."));
+                address = address.substring(0, address.contains(",") ? address.indexOf(",") : address.length() - 1);
+            }
+            return address;
+        }).collect(Collectors.toList()))) {
+            if (address.isEmpty()) continue;
+            rData.add(new RowData().setValues(Arrays.asList(
+                    new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                    new CellData().setUserEnteredValue(new ExtendedValue().setStringValue(address)),
+                    new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=СЧЁТЕСЛИМН('Объявления'!F2:F20000;\"*" + address + "*\")"))
+            )));
+        }
         // -------------------- SET VALUES ( END ) --------------------
 
         gridData.setRowData(rData);
@@ -430,20 +485,17 @@ public class SheetsExample {
 
         clHeaders.add(getCellData("Заголовок"));
         clHeaders.add(getCellData("Цена"));
-        clHeaders.add(getCellData("Платные услуги"));
+        clHeaders.add(getCellData("\uD83D\uDC41 Всего"));
+        clHeaders.add(getCellData("\uD83D\uDC41 За день"));
+        clHeaders.add(getCellData("Методы продвижения"));
         clHeaders.add(getCellData("Адрес"));
-        clHeaders.add(getCellData("ID продавца"));
+        clHeaders.add(getCellData("Дата"));
         clHeaders.add(getCellData("Ссылка"));
-        clHeaders.add(getCellData("Просмотры ( все )"));
-        clHeaders.add(getCellData("Просомтров за день"));
-        clHeaders.add(getCellData("Дата подачи объявления"));
-        clHeaders.add(getCellData("Просмотры за 10 дней ( сума )"));
-        clHeaders.add(getCellData("Просмотры сред.знач. за 10 дней"));
         if (filters.isPhoto()) {
             clHeaders.add(getCellData("Фото (шт)"));
         }
         if (filters.isDescription()) {
-            clHeaders.add(getCellData("Текст (описание)"));
+            clHeaders.add(getCellData("Текст"));
         }
         if (filters.isDescriptionLength()) {
             clHeaders.add(getCellData("Кол-во знаков"));
@@ -451,15 +503,19 @@ public class SheetsExample {
         if (filters.isSellerName()) {
             clHeaders.add(getCellData("Имя продавца"));
         }
-        if (filters.isPosition()) {
-            clHeaders.add(getCellData("Номер объявления"));
-        }
-        if (filters.isDate()) {
-            clHeaders.add(getCellData("Дата размещения"));
-        }
+        clHeaders.add(getCellData("ID продавца"));
         if (filters.isPhone()) {
             clHeaders.add(getCellData("Телефон"));
         }
+        if (filters.isPosition()) {
+            clHeaders.add(getCellData("Позиция в выдачу"));
+        }
+        if (filters.isDate()) {
+            clHeaders.add(getCellData("Дата Создания"));
+        }
+        clHeaders.add(getCellData("\uD83D\uDC41 10 дней"));
+        clHeaders.add(getCellData("\uD83D\uDC41 ср. 10 дней"));
+
 
         for (CellData cell : clHeaders) {
             CellFormat format = new CellFormat();

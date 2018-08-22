@@ -60,6 +60,7 @@ public class RequestManager {
     public static List<RequestTask> execute(ArrayList<RequestTask> tasks, Boolean isDebug) throws Exception {
 
         final ReqTaskType type = tasks.get(0).getType();
+//        if (type == ReqTaskType.STATS) isDebug = false;
 
         if (isDebug) {
             switch (type) {

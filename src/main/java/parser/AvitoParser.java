@@ -166,6 +166,9 @@ public class AvitoParser {
             String address = "";
             try {
                 address = ob.getJSONObject("item").getJSONObject("currentItem").getString("address");
+                if (address.isEmpty()) {
+                    address = ob.getJSONObject("item").getJSONObject("currentItem").getJSONObject("refs").getJSONObject("locations").getJSONObject("653240").getString("name");
+                }
             } catch (Exception ignored) {}
             item.setAddress(address);
 
@@ -242,11 +245,36 @@ public class AvitoParser {
             item.setId(task.getId());
             // Здесь гавнярит Александр
 
+            String dateApplication = "";
+            try {
+                dateApplication = doc.select("div.item-stats__date strong").text();
+                String day = dateApplication.split(" ")[0];
+                String monthData = dateApplication.split(" ")[1];
+                String year = dateApplication.split(" ")[2];
+                    switch (monthData) {
+                        case "января": monthData = "01";break;case "февраля": monthData = "02";break;case "марта": monthData = "03";break;case "апреля": monthData = "04";break;case "мая": monthData = "05";break;case "июня": monthData = "06";break;case "июля": monthData = "07";break;case "августа": monthData = "08";break;case "сентября": monthData = "09";break;case "октября": monthData = "10";break;case "ноября": monthData = "11";break;case "декабря": monthData = "12";break;
+                    }
+                dateApplication = year + "." + monthData + "." + day;
+            } catch (Exception ignored) {}
+            item.setDateApplication(dateApplication);
 
             // Стата просмотров хранится в json ( небольшая помощь )
             String json = doc.select("div.item-stats__chart").attr("data-chart");
             JSONObject chart = new JSONObject(json);
 
+            int viewsTenDayArray = 0;
+            String viewsTenDay = "0";
+            try {
+                int viewsTenDayArrayNew = chart.getJSONArray("columns").getJSONArray(1).length() -1;
+                int viewsTenDayArrayTest = viewsTenDayArrayNew;
+                for ( int x = 0 ; (viewsTenDayArrayNew > 10) ? x <= 10: x <= (viewsTenDayArrayNew - 1)  ; x++ ) {
+                int viewsTenDayTest = chart.getJSONArray("columns").getJSONArray(1).getInt(viewsTenDayArrayTest--);
+                viewsTenDayArray = viewsTenDayArray + viewsTenDayTest;
+                }
+                viewsTenDay = String.valueOf((viewsTenDayArrayNew > 10) ? viewsTenDayArray / 10:  viewsTenDayArray / viewsTenDayArrayNew) ;
+            } catch (Exception ignored) {}
+            item.setViewsTenDay(String.valueOf(viewsTenDayArray));
+            item.setViewsAverageTenDay(viewsTenDay);
 
             // Здесь уже норм код
             result.add(item);

@@ -258,15 +258,14 @@ public class Ad {
         this.quantityText = info.getQuantityText();
         this.seller = info.getSeller();
         this.sellerId = info.getSellerId();
-        this.dateApplication = "тест";
-        this.viewsTenDay= "тест";
-        this.viewsAverageTenDay= "тест";
         this.phone= info.getPhone();
         this.hasStats= info.getHasStats();
     }
 
     public void addStatInfo(StatInfo info) {
-
+        this.dateApplication = info.getDateApplication();
+        this.viewsTenDay= info.getViewsTenDay();
+        this.viewsAverageTenDay= info.getViewsAverageTenDay();
     }
 
     @Override
