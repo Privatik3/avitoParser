@@ -1,14 +1,17 @@
 package manager;
 
+import api.History;
 import db.DBHandler;
 import google.ReportFilter;
 import google.SheetsExample;
+import manager.exeption.ZeroResultException;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import parser.*;
+import socket.EventSocket;
 import utility.RequestManager;
 
 import java.io.IOException;
@@ -19,20 +22,18 @@ import java.util.logging.Logger;
 public class Task {
 
     private static Logger log = Logger.getLogger("");
-    private static Boolean DEBUG_MODE = true;
 
     private String token;
-    private String resultLink;
-    private HashMap<String, String> param;
     private String title = "";
     private String ip = "";
+
+    private String resultLink;
     private ArrayList<RequestTask> reqTasks;
-    private List<Ad> resultList = new ArrayList<>();
+    private List<Ad> result = new ArrayList<>();
     private ReportFilter reportFilter;
 
     public Task(String token, HashMap<String, String> param) throws IOException {
         this.token = token;
-        this.param = param;
 
         if (param.containsKey("ip")) {
             ip = param.get("ip").toLowerCase();
@@ -83,97 +84,99 @@ public class Task {
         return resultLink;
     }
 
-    public void start() {
-
-        try {
+    public void start() throws Exception {
             long startTime = new Date().getTime();
 
-            log.info("Выполняем запрос на выкачку страниц каталога");
-            List<RequestTask> pagesHtml = RequestManager.execute(reqTasks, DEBUG_MODE);
-            reqTasks.clear();
-
-            List<PageInfo> pageInfo = AvitoParser.parsePages(pagesHtml);
-            pagesHtml.clear();
-
-            log.info("-------------------------------------------------");
-            log.info("Формируем начальный список результатов");
-            for (PageInfo info : pageInfo) {
-                resultList.add(new Ad(info));
-//                reqTasks.add(new RequestTask(info.getId(), info.getUrl(), ReqTaskType.ITEM));
-                reqTasks.add(new RequestTask(info.getId(), info.getUrl().replace("www", "m"), ReqTaskType.ITEM));
-            }
-            pageInfo.clear();
-
-            log.info("-------------------------------------------------");
-            log.info("Выполняем запрос на выкачку страниц обьявлений");
-            List<RequestTask> itemsHtml = RequestManager.execute(reqTasks, DEBUG_MODE);
-            reqTasks.clear();
-
-            List<ItemInfo> itemInfo = AvitoParser.parseItems(itemsHtml);
-            itemsHtml.clear();
-
-            log.info("-------------------------------------------------");
-            log.info("Дополняем результат информацией полечунной со страниц обьявления");
-            for (ItemInfo info : itemInfo) {
-                String infoID = info.getId();
-
-                Optional<Ad> first = resultList.stream().filter(itm -> itm.getId().equals(infoID)).findFirst();
-                first.ifPresent(ad -> ad.addPageInfo(info));
-            }
-            itemInfo.clear();
-
-            if (reportFilter.isDate()) {
-                log.info("-------------------------------------------------");
-                log.info("Выполняем запрос на выкачку страниц статистики");
-                for (Ad ad : resultList) {
-                    if (!ad.hasStats()) continue;
-
-                    String url = "https://www.avito.ru/items/stat/" + ad.getId() + "?step=0";
-                    reqTasks.add(new RequestTask(ad.getId(), url, ReqTaskType.STATS));
-                }
-
-                List<RequestTask> statsHtml = RequestManager.execute(reqTasks, DEBUG_MODE);
+            try {
+                EventSocket.checkToken(token);
+                log.info("Выполняем запрос на выкачку страниц каталога");
+                List<RequestTask> pagesHtml = RequestManager.execute(reqTasks);
                 reqTasks.clear();
 
-                List<StatInfo> statInfo = AvitoParser.parseStats(statsHtml);
-                statsHtml.clear();
+                List<PageInfo> pageInfo = AvitoParser.parsePages(pagesHtml);
+                pagesHtml.clear();
 
                 log.info("-------------------------------------------------");
-                log.info("Дополняем результат, статистекой просмотров");
-                for (StatInfo info : statInfo) {
+                log.info("Формируем начальный список результатов");
+                for (PageInfo info : pageInfo) {
+                    result.add(new Ad(info));
+                    reqTasks.add(new RequestTask(info.getId(), info.getUrl().replace("www", "m"), ReqTaskType.ITEM));
+                }
+                pageInfo.clear();
+
+                if (reqTasks.size() == 0)
+                    throw new ZeroResultException("Получено 0 обьявлений, попробуйте другой запрос");
+
+                EventSocket.checkToken(token);
+                log.info("-------------------------------------------------");
+                log.info("Выполняем запрос на выкачку страниц обьявлений");
+                List<RequestTask> itemsHtml = RequestManager.execute(reqTasks);
+                reqTasks.clear();
+
+                List<ItemInfo> itemInfo = AvitoParser.parseItems(itemsHtml);
+                itemsHtml.clear();
+
+                log.info("-------------------------------------------------");
+                log.info("Дополняем результат информацией полечунной со страниц обьявления");
+                for (ItemInfo info : itemInfo) {
                     String infoID = info.getId();
 
-                    Optional<Ad> first = resultList.stream().filter(itm -> itm.getId().equals(infoID)).findFirst();
-                    first.ifPresent(ad -> ad.addStatInfo(info));
+                    Optional<Ad> first = result.stream().filter(itm -> itm.getId().equals(infoID)).findFirst();
+                    first.ifPresent(ad -> ad.addPageInfo(info));
                 }
-                statInfo.clear();
+                itemInfo.clear();
+
+                if (reportFilter.isDate()) {
+                    log.info("-------------------------------------------------");
+                    log.info("Выполняем запрос на выкачку страниц статистики");
+                    for (Ad ad : result) {
+                        if (!ad.hasStats()) continue;
+
+                        String url = "https://www.avito.ru/items/stat/" + ad.getId() + "?step=0";
+                        reqTasks.add(new RequestTask(ad.getId(), url, ReqTaskType.STATS));
+                    }
+
+                    EventSocket.checkToken(token);
+                    List<RequestTask> statsHtml = RequestManager.execute(reqTasks);
+                    reqTasks.clear();
+
+                    List<StatInfo> statInfo = AvitoParser.parseStats(statsHtml);
+                    statsHtml.clear();
+
+                    log.info("-------------------------------------------------");
+                    log.info("Дополняем результат, статистекой просмотров");
+                    for (StatInfo info : statInfo) {
+                        String infoID = info.getId();
+
+                        Optional<Ad> first = result.stream().filter(itm -> itm.getId().equals(infoID)).findFirst();
+                        first.ifPresent(ad -> ad.addStatInfo(info));
+                    }
+                    statInfo.clear();
+                }
+
+
+                int endTime = (int) (new Date().getTime() - (startTime));
+                log.info("-------------------------------------------------");
+                log.info("ПОЛНОЕ ВРЕМЯ ВЫПОЛНЕНИЯ: " + endTime + " ms");
+                log.info("-------------------------------------------------");
+
+                EventSocket.checkToken(token);
+                RequestManager.closeClient();
+                this.resultLink = SheetsExample.generateSheet(title, result, reportFilter);
+
+                //API
+                DBHandler.saveHistory(new History(ip, token, title, result.size(), endTime, resultLink));
+                result.clear();
+            } catch (ZeroResultException zeroEx) {
+              throw zeroEx;
+            } catch (Exception e) {
+                throw new Exception("Ошибка во время парсинга");
             }
-
-
-            int endTime = (int) (new Date().getTime() - (startTime));
-            log.info("-------------------------------------------------");
-            log.info("ПОЛНОЕ ВРЕМЯ ВЫПОЛНЕНИЯ: " + endTime + " ms");
-            log.info("-------------------------------------------------");
-
-            RequestManager.closeClient();
-            DBHandler.close();
-            this.resultLink = SheetsExample.generateSheet(title, resultList, reportFilter);
-
-            // API
-//            DbManager.saveHistory(new History(ip, token, title, result.size(), endTime, resultLink));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     private ArrayList<RequestTask> initTasks(HashMap<String, String> parameters) throws IOException {
 
         ArrayList<RequestTask> result = new ArrayList<>();
-
-        if (DEBUG_MODE) {
-            result.add(new RequestTask("1", "debug", ReqTaskType.CATEGORY));
-            return result;
-        }
 
         int pages = Integer.parseInt(parameters.get("max_pages"));
         parameters.remove("max_pages");

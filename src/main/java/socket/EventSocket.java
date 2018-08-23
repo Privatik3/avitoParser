@@ -33,6 +33,12 @@ public class EventSocket {
         getSess(token).close();
     }
 
+    public static void closeToken(String token) {
+        try {
+            getSess(token).close();
+        } catch (Exception ignored) {}
+    }
+
     @OnOpen
     public void onWebSocketConnect(Session sess) throws IOException {
         String token = getToken(sess);

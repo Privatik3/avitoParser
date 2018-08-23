@@ -3,16 +3,35 @@ package manager;
 import socket.EventSocket;
 import utility.ProxyManager;
 
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.logging.*;
+import java.util.logging.Formatter;
 
 public class TaskManager {
 
     private static CopyOnWriteArrayList<Task> tasks = new CopyOnWriteArrayList<>();
 
     static {
-//        System.setErr(null);
-//        doTask();
+        Logger system = Logger.getLogger("");
+        Handler[] handlers = system.getHandlers();
+        system.removeHandler(handlers[0]);
+
+        ConsoleHandler handler = new ConsoleHandler();
+        handler.setFormatter(new Formatter() {
+            @Override
+            public String format(LogRecord record) {
+                return
+                        new SimpleDateFormat("HH:mm:ss.SSS").format(new Date()) + " -> " +
+                                record.getMessage() + "\r\n";
+            }
+        });
+        system.addHandler(handler);
+        system.setUseParentHandlers(false);
+        System.setErr(null);
+        system.info("-------------------------------------------------");
+        doTask();
     }
 
     public static void initTask(String token, HashMap<String, String> parameters) {
@@ -21,12 +40,12 @@ public class TaskManager {
             Task task = new Task(token, parameters);
             tasks.add(task);
         } catch (Exception e) {
-            e.printStackTrace();
-//            EventSocket.sendMessage(token, "{\"message\":\"error\",\"parameters\":[{\"name\":\"msg\",\"value\":\"Не удалось инициализировать таск\"}]}");
+            EventSocket.sendMessage(token, "{\"message\":\"error\",\"parameters\":[{\"name\":\"msg\",\"value\":\"Не удалось инициализировать таск\"}]}");
+            EventSocket.closeToken(token);
             return;
         }
 
-//        EventSocket.sendMessage(token, "{\"message\":\"query\",\"parameters\":[{\"name\":\"position\",\"value\":\"" + tasks.size() + "\"}]}");
+        EventSocket.sendMessage(token, "{\"message\":\"query\",\"parameters\":[{\"name\":\"position\",\"value\":\"" + tasks.size() + "\"}]}");
     }
 
     private static void updateQuery() {
@@ -37,30 +56,33 @@ public class TaskManager {
     }
 
     public static void doTask() {
-//        Thread demon = new Thread(() -> {
+        Thread demon = new Thread(() -> {
             while (true) {
+                String token = "";
                 try {
                     if (tasks.size() > 0) {
                         Task task = tasks.get(0);
                         tasks.remove(task);
 
-//                        boolean isExist = EventSocket.allTokens.containsKey(task.getToken());
-//                        if (!isExist) continue;
+                        token = task.getToken();
+                        EventSocket.checkToken(token);
 
                         task.start();
 
-//                        EventSocket.sendResult(task);
-//                        updateQuery();
+                        EventSocket.sendResult(task);
+                        updateQuery();
 
                         System.gc();
                         ProxyManager.clear();
                     }
                     Thread.sleep(1000);
-                } catch (Exception ignored) {
+                } catch (Exception e) {
+                    EventSocket.sendMessage(token, "{\"message\":\"error\",\"parameters\":[{\"name\":\"msg\",\"value\":\"" + e.getMessage() + "\"}]}");
+                    EventSocket.closeToken(token);
                 }
             }
-//        });
-//        demon.setDaemon(true);
-//        demon.start();
+        });
+        demon.setDaemon(true);
+        demon.start();
     }
 }

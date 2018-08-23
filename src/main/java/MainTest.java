@@ -1,3 +1,5 @@
+import api.History;
+import db.DBHandler;
 import manager.TaskManager;
 import org.json.JSONObject;
 import utility.ProxyManager;
@@ -12,6 +14,7 @@ import java.nio.file.StandardOpenOption;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Scanner;
 import java.util.logging.*;
 
@@ -36,7 +39,7 @@ public class MainTest {
         system.setUseParentHandlers(false);
         system.info("-------------------------------------------------");
 
-        String pageCount = "30"; // Количество страниц
+        String pageCount = "1"; // Количество страниц
 
         HashMap<String, String> parameters = new HashMap<>();
         parameters.put("category_id", "14");
@@ -45,20 +48,18 @@ public class MainTest {
         parameters.put("s_trg", "3");
 
         parameters.put("title", "Авито - Транспорт - Мотоциклы и мототехника - 2018-08-22");
+        parameters.put("ip", "176.105.204.178");
         parameters.put("max_pages", pageCount);
 
         parameters.put("photo", "true");
         parameters.put("description", "true");
         parameters.put("descriptionLength", "true");
         parameters.put("sellerName", "true");
-        parameters.put("position", "true");
-        parameters.put("date", "true");
-        parameters.put("phone", "true");
+//        parameters.put("position", "true");
+//        parameters.put("date", "true");
+//        parameters.put("phone", "true");
 
-        parameters.put("ip", "176.105.204.178");
-        parameters.put("token", "xiiiangel");
-
-        TaskManager.initTask("646421", parameters);
+        TaskManager.initTask("xiiiangel", parameters);
 
         TaskManager.doTask();
     }

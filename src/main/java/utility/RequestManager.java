@@ -48,30 +48,15 @@ public class RequestManager {
                     setUserAgent(USER_AGENT).
                     setHostnameVerifier(SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER).
                     setSSLContext(sslContext).
-                    setMaxConnPerRoute(512).
-                    setMaxConnTotal(512).build();
-
+                    setMaxConnPerRoute(1024).
+                    setMaxConnTotal(1024).build();
         } catch (Exception e) {
             log.log(Level.SEVERE, "Не удалось инициализировать HTTP Client");
             log.log(Level.SEVERE, "Exception: ", e);
         }
     }
 
-    public static List<RequestTask> execute(ArrayList<RequestTask> tasks, Boolean isDebug) throws Exception {
-
-        final ReqTaskType type = tasks.get(0).getType();
-//        if (type == ReqTaskType.STATS) isDebug = false;
-
-        if (isDebug) {
-            switch (type) {
-                case ITEM:
-                    return DBHandler.selectAllItems();
-                case CATEGORY:
-                    return DBHandler.selectAllPages();
-                case STATS:
-                    return DBHandler.selectAllStats();
-            }
-        }
+    public static List<RequestTask> execute(ArrayList<RequestTask> tasks) throws Exception {
 
         if (client == null)
             initClient();
@@ -82,9 +67,6 @@ public class RequestManager {
         ArrayList<RequestConfig> goodProxy = new ArrayList<>();
 
         final long startTime = new Date().getTime();
-        final int initTaskSize = tasks.size();
-        final int bufferSize = tasks.size() < 100 ? tasks.size() : 100;
-
         ArrayList<RequestTask> taskMultiply = new ArrayList<>(tasks);
 
         Integer waveCount = 0;
@@ -92,18 +74,6 @@ public class RequestManager {
         Integer wave = 0;
         Integer resultStatus = 0;
         Integer failCount = 0;
-
-        switch (type) {
-            case ITEM:
-                DBHandler.clearAvitoItems();
-                break;
-            case CATEGORY:
-                DBHandler.clearAvitoPages();
-                break;
-            case STATS:
-                DBHandler.clearAvitoStats();
-                break;
-        }
 
         ArrayList<RequestConfig> proxys;
         while (tasks.size() > 0) {
@@ -123,7 +93,7 @@ public class RequestManager {
             wave = taskMultiply.size();
 
             tasks.clear();
-            for (int i = 0; tasks.size() < (allProxy.size() > 512 ? 512 : allProxy.size())
+            for (int i = 0; tasks.size() < (allProxy.size() > 1024 ? 1024 : allProxy.size())
                     && tasks.size() < (taskMultiply.size() * (taskMultiply.size() == 1 ? 1 : 4)); i++) {
                 if (i == taskMultiply.size())
                     i = 0;
@@ -145,19 +115,12 @@ public class RequestManager {
                 new Fiber<Void>((SuspendableRunnable) () -> {
                     HttpEntity entity = null;
                     try {
-//                        String taskUrl = URLDecoder.decode(task.getUrl(), StandardCharsets.UTF_8.toString())
-//                                .replaceAll("https", "http");
                         String taskUrl = task.getUrl().replaceAll("https", "http");
                         HttpGet request = new HttpGet(taskUrl);
                         if (tasks.size() != 1)
                             request.setConfig(proxy);
 
-
-//                        if (!task.getType().toString().toLowerCase().contains("ebay"))
-//                            request.setHeader("Cookie", System.getProperty("zipCode"));
-
                         CloseableHttpResponse response = client.execute(request);
-//                        System.out.println(response.getStatusLine());
                         if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
                             entity = response.getEntity();
                             String body = EntityUtils.toString(entity, "UTF-8");
@@ -189,38 +152,14 @@ public class RequestManager {
 
             taskMultiply.removeAll(result);
             if (resultStatus == result.size() && taskMultiply.size() != 0 && failCount > 3) {
-                for (RequestTask task : taskMultiply)
-                    Files.write(Paths.get("fail.txt"), (task.getUrl() + "\n").getBytes(), StandardOpenOption.APPEND);
-
-                if (taskMultiply.size() > 10)
-                    throw new Exception("За круг было получено 0 результатов");
-                else
-                    taskMultiply.clear();
-            }
-
-            if (result.size() > 0 && (result.size() > bufferSize || tasks.size() == 0)) {
-
-                ArrayList<RequestTask> items = new ArrayList<>(result);
-                result.clear();
-
-                switch (type) {
-                    case ITEM:
-                        DBHandler.addAvitoItems(items);
-                        break;
-                    case CATEGORY:
-                        DBHandler.addAvitoPages(items);
-                        break;
-                    case STATS:
-                        DBHandler.addAvitoStats(items);
-                        break;
-                }
+                taskMultiply.clear();
             }
         }
 
         log.info("-------------------------------------------------");
         log.info("Закончили парсить, затраченное время: " + (new Date().getTime() - startTime) + " ms");
 
-        return type == ReqTaskType.ITEM ? DBHandler.selectAllItems() : (type == ReqTaskType.CATEGORY ? DBHandler.selectAllPages() : DBHandler.selectAllStats());
+        return new ArrayList<>(result);
     }
 
     public static void closeClient() throws IOException {
