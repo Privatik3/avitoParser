@@ -179,7 +179,7 @@ public class AvitoParser {
             } catch (Exception ignored) {}
             item.setData(String.valueOf(dataNew));
 
-            String numberPictures = "";
+            String numberPictures = "0";
             try {
                 numberPictures = String.valueOf(ob.getJSONObject("item").getJSONObject("currentItem").getJSONArray("images").length());
             } catch (Exception ignored) {}
@@ -190,6 +190,7 @@ public class AvitoParser {
             try {
                 description = ob.getJSONObject("item").getJSONObject("currentItem").getString("description").replaceAll("\n", " ");
                 quantityText = String.valueOf(description.length());
+                description = description.trim();
             } catch (Exception ignored) {}
             item.setText(description);
             item.setQuantityText(quantityText);
@@ -249,6 +250,9 @@ public class AvitoParser {
             try {
                 dateApplication = doc.select("div.item-stats__date strong").text();
                 String day = dateApplication.split(" ")[0];
+                if (day.length() <= 1){
+                    day = "0" + day;
+                }
                 String monthData = dateApplication.split(" ")[1];
                 String year = dateApplication.split(" ")[2];
                     switch (monthData) {
