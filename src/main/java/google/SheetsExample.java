@@ -31,6 +31,7 @@ import parser.Ad;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -117,7 +118,7 @@ public class SheetsExample {
             try {
                 dailyViews = ad.getDailyViews();
             } catch (Exception ignore) {}
-            clValues.add(getCellData(dailyViews));
+            clValues.add(getCellData(Integer.parseInt(dailyViews)));
 
             String services = "";
             try {
@@ -168,8 +169,9 @@ public class SheetsExample {
                 String text = "";
                 try {
                     text = ad.getText();
+                    text = text.trim();
                 } catch (Exception ignore) {}
-                clValues.add(getCellData(text));
+                clValues.add(getCellData(text.replace("\u00A0"," ").trim()));
             }
 
 
@@ -216,15 +218,13 @@ public class SheetsExample {
 
 
             if (filters.isDate()) {
+                if (ad.hasStats()) {
                 String dateApplication = "";
                 try {
                     dateApplication = ad.getDateApplication();
                 } catch (Exception ignore) {
                 }
                 clValues.add(getCellData(dateApplication));
-
-
-                if (ad.hasStats()) {
                     String viewsTenDay = "0";
                     try {
                         viewsTenDay = ad.getViewsTenDay();
@@ -239,6 +239,7 @@ public class SheetsExample {
                     }
                     clValues.add(getCellData(Integer.parseInt(viewsAverageTenDay)));
                 }else {
+                    clValues.add(getCellData(new SimpleDateFormat("yyyy.MM.dd").format(new Date())));
                     clValues.add(getCellData(0));
                     clValues.add(getCellData(0));
                 }
@@ -302,12 +303,12 @@ public class SheetsExample {
 
         // -------------------- SORTS SHEETS --------------------
         sheets.add(getSortSheet("Цены (сорт)", "=SORT('Объявления'!A2:R20000,2,FALSE)", filters));
-        sheets.add(getSortSheet("\uD83D\uDC41 Всего", "=SORT('Объявления'!A2:R20000;3;FALSE)", filters));
+        sheets.add(getSortSheet("(ʘʘ) Всего", "=SORT('Объявления'!A2:R20000;3;FALSE)", filters));
         sheets.add(getSortSheet("Методы (сорт)", "=SORT('Объявления'!A2:R20000;5;FALSE)", filters));
-        sheets.add(getSortSheet("\uD83D\uDC41 За день", "=SORT('Объявления'!A2:R20000;4;FALSE)", filters));
+        sheets.add(getSortSheet("(ʘʘ) За день", "=SORT('Объявления'!A2:R20000;4;FALSE)", filters));
         if (filters.isDate()) {
-            sheets.add(getSortSheet("\uD83D\uDC41 10 дней", "=SORT('Объявления'!A2:R20000;17;FALSE)", filters));
-            sheets.add(getSortSheet("\uD83D\uDC41 ср. 10 дней", "=SORT('Объявления'!A2:R20000;18;FALSE)", filters));
+            sheets.add(getSortSheet("(ʘʘ) 10 дней", "=SORT('Объявления'!A2:R20000;17;FALSE)", filters));
+            sheets.add(getSortSheet("(ʘʘ) ср. 10 дней", "=SORT('Объявления'!A2:R20000;18;FALSE)", filters));
         }
 
 
@@ -415,9 +416,7 @@ public class SheetsExample {
         )));
         rData.add(new RowData());
 
-        rData.add(new RowData().setValues(Arrays.asList(
-                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("Районы:"))
-        )));
+        Boolean coin = true;
         for (String address : new HashSet<>(ads.stream().map(ad -> {
             String address = "";
             if (ad.getAddress().contains("м.")) {
@@ -427,11 +426,20 @@ public class SheetsExample {
             return address;
         }).collect(Collectors.toList()))) {
             if (address.isEmpty()) continue;
-            rData.add(new RowData().setValues(Arrays.asList(
-                    new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
-                    new CellData().setUserEnteredValue(new ExtendedValue().setStringValue(address)),
-                    new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=СЧЁТЕСЛИМН('Объявления'!F2:F20000;\"*" + address + "*\")"))
-            )));
+            if (coin) {
+                rData.add(new RowData().setValues(Arrays.asList(
+                        new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("Районы:")),
+                        new CellData().setUserEnteredValue(new ExtendedValue().setStringValue(address)),
+                        new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=СЧЁТЕСЛИМН('Объявления'!F2:F20000;\"*" + address + "*\")"))
+                )));
+                coin = false;
+            } else {
+                rData.add(new RowData().setValues(Arrays.asList(
+                        new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                        new CellData().setUserEnteredValue(new ExtendedValue().setStringValue(address)),
+                        new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=СЧЁТЕСЛИМН('Объявления'!F2:F20000;\"*" + address + "*\")"))
+                )));
+            }
         }
         // -------------------- SET VALUES ( END ) --------------------
 
@@ -485,8 +493,8 @@ public class SheetsExample {
 
         clHeaders.add(getCellData("Заголовок"));
         clHeaders.add(getCellData("Цена"));
-        clHeaders.add(getCellData("\uD83D\uDC41 Всего"));
-        clHeaders.add(getCellData("\uD83D\uDC41 За день"));
+        clHeaders.add(getCellData("(ʘʘ) Всего"));
+        clHeaders.add(getCellData("(ʘʘ) За день"));
         clHeaders.add(getCellData("Методы продвижения"));
         clHeaders.add(getCellData("Адрес"));
         clHeaders.add(getCellData("Дата"));
@@ -512,9 +520,9 @@ public class SheetsExample {
         }
         if (filters.isDate()) {
             clHeaders.add(getCellData("Дата Создания"));
+            clHeaders.add(getCellData("(ʘʘ) 10 дней"));
+            clHeaders.add(getCellData("(ʘʘ) ср. 10 дней"));
         }
-        clHeaders.add(getCellData("\uD83D\uDC41 10 дней"));
-        clHeaders.add(getCellData("\uD83D\uDC41 ср. 10 дней"));
 
 
         for (CellData cell : clHeaders) {
