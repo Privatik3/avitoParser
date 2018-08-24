@@ -20,7 +20,7 @@ import java.util.logging.*;
 
 public class MainTest {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
 
         Logger system = Logger.getLogger("");
         Handler[] handlers = system.getHandlers();
