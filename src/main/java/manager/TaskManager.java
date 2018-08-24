@@ -3,6 +3,7 @@ package manager;
 import socket.EventSocket;
 import utility.ProxyManager;
 
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -29,21 +30,15 @@ public class TaskManager {
         });
         system.addHandler(handler);
         system.setUseParentHandlers(false);
-        System.setErr(null);
+//        System.setErr(null);
         system.info("-------------------------------------------------");
         doTask();
     }
 
-    public static void initTask(String token, HashMap<String, String> parameters) {
+    public static void initTask(String token, HashMap<String, String> parameters) throws IOException {
 
-        try {
-            Task task = new Task(token, parameters);
-            tasks.add(task);
-        } catch (Exception e) {
-            EventSocket.sendMessage(token, "{\"message\":\"error\",\"parameters\":[{\"name\":\"msg\",\"value\":\"Не удалось инициализировать таск\"}]}");
-            EventSocket.closeToken(token);
-            return;
-        }
+        Task task = new Task(token, parameters);
+        tasks.add(task);
 
         EventSocket.sendMessage(token, "{\"message\":\"query\",\"parameters\":[{\"name\":\"position\",\"value\":\"" + tasks.size() + "\"}]}");
     }
@@ -55,17 +50,16 @@ public class TaskManager {
         }
     }
 
-    public static void doTask() {
+    private static void doTask() {
         Thread demon = new Thread(() -> {
             while (true) {
-                String token = "";
                 try {
                     if (tasks.size() > 0) {
                         Task task = tasks.get(0);
                         tasks.remove(task);
 
-                        token = task.getToken();
-                        EventSocket.checkToken(token);
+                        boolean isExist = EventSocket.allTokens.containsKey(task.getToken());
+                        if (!isExist) continue;
 
                         task.start();
 
@@ -75,10 +69,8 @@ public class TaskManager {
                         System.gc();
                         ProxyManager.clear();
                     }
-                    Thread.sleep(1000);
-                } catch (Exception e) {
-                    EventSocket.sendMessage(token, "{\"message\":\"error\",\"parameters\":[{\"name\":\"msg\",\"value\":\"" + e.getMessage() + "\"}]}");
-                    EventSocket.closeToken(token);
+                    Thread.sleep(500);
+                } catch (Exception ignored) {
                 }
             }
         });
