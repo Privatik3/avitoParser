@@ -1,8 +1,5 @@
 package parser;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.sun.xml.internal.bind.v2.TODO;
-import jdk.nashorn.internal.parser.JSONParser;
 import manager.RequestTask;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;

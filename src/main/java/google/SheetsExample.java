@@ -33,6 +33,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class SheetsExample {
@@ -44,6 +46,8 @@ public class SheetsExample {
     private static JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
     private static String KEY_FILE = "olx-parser.json";
     private static String APPLICATION_NAME = "OLX Parser";
+
+    private static Logger log = Logger.getLogger("");
 
     static {
         try {
@@ -57,277 +61,258 @@ public class SheetsExample {
 
     public static String generateSheet(String title, List<Ad> ads, ReportFilter filters) throws IOException {
 
-        // 1. CREATE NEW SPREADSHEET
-        Spreadsheet requestBody = new Spreadsheet();
-        SpreadsheetProperties spreadProp = new SpreadsheetProperties();
-        spreadProp.setTitle(title);
-        spreadProp.setLocale("ru_RU");
-        spreadProp.setTimeZone("Europe/Moscow");
-        requestBody.setProperties(spreadProp);
+        try {
+            // 1. CREATE NEW SPREADSHEET
+            Spreadsheet requestBody = new Spreadsheet();
+            SpreadsheetProperties spreadProp = new SpreadsheetProperties();
+            spreadProp.setTitle(title);
+            spreadProp.setLocale("ru_RU");
+            spreadProp.setTimeZone("Europe/Moscow");
+            requestBody.setProperties(spreadProp);
 
-        List<Sheet> sheets = new ArrayList<>();
+            List<Sheet> sheets = new ArrayList<>();
 
-        // -------------------- MAIN SHEET --------------------
-        Sheet mainSheet = new Sheet();
+            // -------------------- MAIN SHEET --------------------
+            Sheet mainSheet = new Sheet();
 
-        SheetProperties sheetProperties = new SheetProperties();
-        sheetProperties.setTitle("Объявления");
-        GridProperties gridProperties = new GridProperties();
-        gridProperties.setFrozenRowCount(1);
-        sheetProperties.setGridProperties(gridProperties);
-        mainSheet.setProperties(sheetProperties);
+            SheetProperties sheetProperties = new SheetProperties();
+            sheetProperties.setTitle("Объявления");
+            GridProperties gridProperties = new GridProperties();
+            gridProperties.setFrozenRowCount(1);
+            sheetProperties.setGridProperties(gridProperties);
+            mainSheet.setProperties(sheetProperties);
 
-        List<GridData> gData = new ArrayList<>();
-        GridData gridData = new GridData();
-        gData.add(gridData);
+            List<GridData> gData = new ArrayList<>();
+            GridData gridData = new GridData();
+            gData.add(gridData);
 
-        List<RowData> rData = new ArrayList<>();
+            List<RowData> rData = new ArrayList<>();
 
-        // -------------------- SET HEADERS --------------------
-        rData.add(getRowHeaders(filters));
+            // -------------------- SET HEADERS --------------------
+            rData.add(getRowHeaders(filters));
 
-        // -------------------- SET VALUES --------------------
-        for (Ad ad : ads) {
+            // -------------------- SET VALUES --------------------
+            for (Ad ad : ads) {
 
-            RowData rowVal = new RowData();
-            List<CellData> clValues = new ArrayList<>();
-
-            String titleName = "";
-            try {
-                titleName = ad.getTitle();
-            } catch (Exception ignore) {}
-            clValues.add(getCellData(titleName));
-
-            try {
-                String price = ad.getPrice();
-                   try {
-                       int priceInt = Integer.parseInt(price.replaceAll(" " , ""));
-                       clValues.add(getCellData(priceInt));
-                   }  catch (Exception ignored) {
-                       clValues.add(getCellData(price));
-                   }
-            } catch (Exception ignore) {}
-
-            String views = "";
-            try {
-                views = ad.getViews();
-            } catch (Exception ignore) {}
-            clValues.add(getCellData(Integer.parseInt(views)));
-
-            String dailyViews = "";
-            try {
-                dailyViews = ad.getDailyViews();
-            } catch (Exception ignore) {}
-            clValues.add(getCellData(Integer.parseInt(dailyViews)));
-
-            String services = "";
-            try {
-                if (ad.getPremium()) {
-                    services = services + "1 ";
-                }
-                if (ad.getVip()) {
-                    services = services + "2 ";
-                }
-                if (ad.getUrgent()) {
-                    services = services + "3 ";
-                }
-                if (ad.getUpped()) {
-                    services = services + "4 ";
-                }
-            } catch (Exception ignore) {}
-            clValues.add(getCellData(services));
-
-            String address = "";
-            try {
-                address = ad.getAddress();
-            } catch (Exception ignore) {}
-            clValues.add(getCellData(address));
-
-
-            String data = "";
-            try {
-                data = ad.getData();
-            } catch (Exception ignore) {}
-            clValues.add(getCellData(data));
-
-            String url = "";
-            try {
-                url = ad.getUrl();
-            } catch (Exception ignore) {}
-            clValues.add(getCellData(url));
-
-            if (filters.isPhoto()) {
-                String numberPictures = "";
-                try {
-                    numberPictures = ad.getNumberPictures();
-                } catch (Exception ignore) {}
-                clValues.add(getCellData(numberPictures));
-            }
-
-
-            if (filters.isDescription()) {
-                String text = "";
-                try {
-                    text = ad.getText();
-                    text = text.trim();
-                } catch (Exception ignore) {}
-                clValues.add(getCellData(text.replace("\u00A0"," ").trim()));
-            }
-
-
-            if (filters.isDescriptionLength()) {
-                String quantityText = "";
-                try {
-                    quantityText = ad.getQuantityText();
-                } catch (Exception ignore) {}
-                clValues.add(getCellData(quantityText));
-            }
-
-
-            if (filters.isSellerName()) {
-                String seller = "";
-                try {
-                    seller = ad.getSeller();
-                } catch (Exception ignore) {}
-                clValues.add(getCellData(seller));
-            }
-
-            String sellerId = "";
-            try {
-                sellerId = ad.getSellerId();
-            } catch (Exception ignore) {}
-            clValues.add(getCellData(sellerId));
-
-
-            if (filters.isPhone()) {
-                String phone = "";
-                try {
-                    phone = ad.getPhone();
-                } catch (Exception ignore) {}
-                clValues.add(getCellData(phone));
-            }
-
-
-            if (filters.isPosition()) {
-                Integer position = 0;
-                try {
-                    position = ad.getPosition();
-                } catch (Exception ignore) {}
-                clValues.add(getCellData(position));
-            }
-
-
-            if (filters.isDate()) {
-                if (ad.hasStats()) {
-                String dateApplication = "";
-                try {
-                    dateApplication = ad.getDateApplication();
-                } catch (Exception ignore) {
-                }
-                clValues.add(getCellData(dateApplication));
-                    String viewsTenDay = "0";
-                    try {
-                        viewsTenDay = ad.getViewsTenDay();
-                    } catch (Exception ignore) {
-                    }
-                    clValues.add(getCellData(Integer.parseInt(viewsTenDay)));
-
-                    String viewsAverageTenDay = "0";
-                    try {
-                        viewsAverageTenDay = ad.getViewsAverageTenDay();
-                    } catch (Exception ignore) {
-                    }
-                    clValues.add(getCellData(Integer.parseInt(viewsAverageTenDay)));
-                }else {
-                    clValues.add(getCellData(new SimpleDateFormat("yyyy.MM.dd").format(new Date())));
-                    clValues.add(getCellData(0));
-                    clValues.add(getCellData(0));
-                }
-            }
-
-
-            rowVal.setValues(clValues);
-            rData.add(rowVal);
-
-
-            /*try {
                 RowData rowVal = new RowData();
                 List<CellData> clValues = new ArrayList<>();
 
-                clValues.add(getCellData(ad.getTitle()));
+                String titleName = "";
                 try {
-                    clValues.add(getCellData(Integer.parseInt(ad.getPrice())));
-                } catch (Exception e) {
-                    clValues.add(getCellData(ad.getPrice()));
+                    titleName = ad.getTitle();
+                } catch (Exception ignore) {
                 }
+                clValues.add(getCellData(titleName));
 
-                clValues.add(getCellData(Integer.parseInt(ad.getViews().equals("") ? "0" : ad.getViews())));
-                clValues.add(getCellData((ad.isTop() ? "1 " : "") + (ad.isPromoted() ? "2" : "")));
-                clValues.add(getCellData(ad.getCity()));
                 try {
-                    clValues.add(getCellData(new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(ad.getDate())));
-                } catch (Exception e) {
-                    clValues.add(getCellData(""));
+                    String price = ad.getPrice();
+                    try {
+                        int priceInt = Integer.parseInt(price.replaceAll(" ", ""));
+                        clValues.add(getCellData(priceInt));
+                    } catch (Exception ignored) {
+                        clValues.add(getCellData(price));
+                    }
+                } catch (Exception ignore) {
                 }
-                clValues.add(getCellData(ad.getPhotos().size()));
-                clValues.add(getCellData(ad.getDescription()));
-                clValues.add(getCellData(ad.getDescription().length()));
-                if (isPhoneEnable) {
-                    ArrayList<String> phones = ad.getOwner().getPhones();
 
-                    String phoneInfo = phones.size() > 0 ? "" : "  ";
-                    for (String phone : phones)
-                        phoneInfo += phone + ", ";
+                String views = "";
+                try {
+                    views = ad.getViews();
+                } catch (Exception ignore) { }
+                if (views == null || views.isEmpty()) views = "0";
+                clValues.add(getCellData(Integer.parseInt(views)));
 
-                    clValues.add(getCellData(phoneInfo.substring(0, phoneInfo.length() - 2)));
+                String dailyViews = "";
+                try {
+                    dailyViews = ad.getDailyViews();
+                } catch (Exception ignore) {}
+                if (dailyViews == null || dailyViews.isEmpty()) dailyViews = (ad.getViews().isEmpty() ? "0" : ad.getViews());
+                clValues.add(getCellData(Integer.parseInt(dailyViews)));
+
+                String services = "";
+                try {
+                    if (ad.getPremium()) {
+                        services = services + "1 ";
+                    }
+                    if (ad.getVip()) {
+                        services = services + "2 ";
+                    }
+                    if (ad.getUrgent()) {
+                        services = services + "3 ";
+                    }
+                    if (ad.getUpped()) {
+                        services = services + "4 ";
+                    }
+                } catch (Exception ignore) {
                 }
-                clValues.add(getCellData(ad.getOwner().getName()));
-                clValues.add(getCellData(ad.getOwner().getId()));
-                clValues.add(getCellData(ad.getOwner().getUserSince()));
-                clValues.add(getCellData(ad.getUrl()));
-                clValues.add(getCellData(ad.getSerialNumber()));
+                clValues.add(getCellData(services));
+
+                String address = "";
+                try {
+                    address = ad.getAddress();
+                } catch (Exception ignore) {
+                }
+                clValues.add(getCellData(address));
+
+
+                String data = "";
+                try {
+                    data = ad.getData();
+                } catch (Exception ignore) {
+                }
+                clValues.add(getCellData(data));
+
+                String url = "";
+                try {
+                    url = ad.getUrl();
+                } catch (Exception ignore) {
+                }
+                clValues.add(getCellData(url));
+
+                if (filters.isPhoto()) {
+                    String numberPictures = "";
+                    try {
+                        numberPictures = ad.getNumberPictures();
+                    } catch (Exception ignore) {
+                    }
+                    clValues.add(getCellData(numberPictures));
+                }
+
+
+                if (filters.isDescription()) {
+                    String text = "";
+                    try {
+                        text = ad.getText();
+                        text = text.trim();
+                    } catch (Exception ignore) {
+                    }
+                    clValues.add(getCellData(text.replace("\u00A0", " ").trim()));
+                }
+
+
+                if (filters.isDescriptionLength()) {
+                    String quantityText = "";
+                    try {
+                        quantityText = ad.getQuantityText();
+                    } catch (Exception ignore) {
+                    }
+                    clValues.add(getCellData(quantityText));
+                }
+
+
+                if (filters.isSellerName()) {
+                    String seller = "";
+                    try {
+                        seller = ad.getSeller();
+                    } catch (Exception ignore) {
+                    }
+                    clValues.add(getCellData(seller));
+                }
+
+                String sellerId = "";
+                try {
+                    sellerId = ad.getSellerId();
+                } catch (Exception ignore) {
+                }
+                clValues.add(getCellData(sellerId));
+
+
+                if (filters.isPhone()) {
+                    String phone = "";
+                    try {
+                        phone = ad.getPhone();
+                    } catch (Exception ignore) {
+                    }
+                    clValues.add(getCellData(phone));
+                }
+
+
+                if (filters.isPosition()) {
+                    Integer position = 0;
+                    try {
+                        position = ad.getPosition();
+                    } catch (Exception ignore) {
+                    }
+                    clValues.add(getCellData(position));
+                }
+
+                if (filters.isDate()) {
+                    if (ad.hasStats()) {
+                        String dateApplication = "";
+                        try {
+                            dateApplication = ad.getDateApplication();
+                        } catch (Exception ignore) {
+                        }
+                        clValues.add(getCellData(dateApplication));
+                        String viewsTenDay = "0";
+                        try {
+                            viewsTenDay = ad.getViewsTenDay();
+                        } catch (Exception ignore) { }
+                        if (viewsTenDay == null || viewsTenDay.isEmpty()) viewsTenDay = (ad.getViews().isEmpty() ? "0" : ad.getViews());
+                        clValues.add(getCellData(Integer.parseInt(viewsTenDay)));
+
+                        String viewsAverageTenDay = "0";
+                        try {
+                            viewsAverageTenDay = ad.getViewsAverageTenDay();
+                        } catch (Exception ignore) {}
+                        if (viewsAverageTenDay == null || viewsAverageTenDay.isEmpty()) viewsAverageTenDay = (ad.getViews().isEmpty() ? "0" : ad.getViews());
+                        clValues.add(getCellData(Integer.parseInt(viewsAverageTenDay)));
+                    } else {
+                        clValues.add(getCellData(new SimpleDateFormat("yyyy.MM.dd").format(new Date())));
+                        clValues.add(getCellData(0));
+                        clValues.add(getCellData(0));
+                    }
+                }
+
 
                 rowVal.setValues(clValues);
                 rData.add(rowVal);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }*/
 
+            }
+            // -------------------- SET VALUES ( END ) --------------------
+
+            gridData.setRowData(rData);
+            mainSheet.setData(gData);
+            sheets.add(mainSheet);
+            // -------------------- MAIN SHEET ( END ) --------------------
+
+            // -------------------- SORTS SHEETS --------------------
+            sheets.add(getSortSheet("Цены (сорт)", "=SORT('Объявления'!A2:R20000,2,FALSE)", filters));
+            sheets.add(getSortSheet("(ʘʘ) Всего", "=SORT('Объявления'!A2:R20000;3;FALSE)", filters));
+            sheets.add(getSortSheet("Методы (сорт)", "=SORT('Объявления'!A2:R20000;5;FALSE)", filters));
+            sheets.add(getSortSheet("(ʘʘ) За день", "=SORT('Объявления'!A2:R20000;4;FALSE)", filters));
+            if (filters.isDate()) {
+                sheets.add(getSortSheet("(ʘʘ) 10 дней", "=SORT('Объявления'!A2:R20000;17;FALSE)", filters));
+                sheets.add(getSortSheet("(ʘʘ) ср. 10 дней", "=SORT('Объявления'!A2:R20000;18;FALSE)", filters));
+            }
+
+
+            // -------------------- STATISTIC SHEET --------------------
+            sheets.add(getStatisticSheet(ads));
+
+            requestBody.setSheets(sheets);
+            Sheets.Spreadsheets.Create request = sheetsService.spreadsheets().create(requestBody);
+
+            Spreadsheet response = request.execute();
+
+            // TODO: Change code below to process the `response` object:
+            System.out.println(response.getSpreadsheetUrl());
+
+            // 2. PUBLISH SPREADSHEAT VIA DRIVE API
+            String fileId = response.getSpreadsheetId();
+            setPermission(fileId);
+
+            return response.getSpreadsheetUrl();
+        } catch (Exception e) {
+            log.log(Level.SEVERE, "Не удалось сформировать отчёт");
+            log.log(Level.SEVERE, "Exception: " + e.getMessage());
+            log.log(Level.SEVERE, "Method: " + e.getStackTrace()[0].getMethodName());
+            log.log(Level.SEVERE, "Line: " + e.getStackTrace()[0].getLineNumber());
+
+            e.printStackTrace();
         }
-        // -------------------- SET VALUES ( END ) --------------------
 
-        gridData.setRowData(rData);
-        mainSheet.setData(gData);
-        sheets.add(mainSheet);
-        // -------------------- MAIN SHEET ( END ) --------------------
-
-        // -------------------- SORTS SHEETS --------------------
-        sheets.add(getSortSheet("Цены (сорт)", "=SORT('Объявления'!A2:R20000,2,FALSE)", filters));
-        sheets.add(getSortSheet("(ʘʘ) Всего", "=SORT('Объявления'!A2:R20000;3;FALSE)", filters));
-        sheets.add(getSortSheet("Методы (сорт)", "=SORT('Объявления'!A2:R20000;5;FALSE)", filters));
-        sheets.add(getSortSheet("(ʘʘ) За день", "=SORT('Объявления'!A2:R20000;4;FALSE)", filters));
-        if (filters.isDate()) {
-            sheets.add(getSortSheet("(ʘʘ) 10 дней", "=SORT('Объявления'!A2:R20000;17;FALSE)", filters));
-            sheets.add(getSortSheet("(ʘʘ) ср. 10 дней", "=SORT('Объявления'!A2:R20000;18;FALSE)", filters));
-        }
-
-
-        // -------------------- STATISTIC SHEET --------------------
-        sheets.add(getStatisticSheet(ads));
-
-        requestBody.setSheets(sheets);
-        Sheets.Spreadsheets.Create request = sheetsService.spreadsheets().create(requestBody);
-
-        Spreadsheet response = request.execute();
-
-        // TODO: Change code below to process the `response` object:
-        System.out.println(response.getSpreadsheetUrl());
-
-        // 2. PUBLISH SPREADSHEAT VIA DRIVE API
-        String fileId = response.getSpreadsheetId();
-        setPermission(fileId);
-
-        return response.getSpreadsheetUrl();
+       return "";
     }
 
     private static Sheet getStatisticSheet(List<Ad> ads) {

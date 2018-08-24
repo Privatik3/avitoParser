@@ -9,8 +9,8 @@
           class = "org.springframework.jdbc.datasource.DriverManagerDataSource">
         <property name = "driverClassName" value = "com.mysql.cj.jdbc.Driver"/>
         <property name = "url" value = "jdbc:mysql://localhost:3306/avito?serverTimezone=America/New_York"/>
-        <property name = "username" value = "root"/>
-        <property name = "password" value = "admin"/>
+        <property name = "username" value = "admin"/>
+        <property name = "password" value = "4Yhv7R5A9lT4"/>
     </bean>
 
     <!-- Definition for studentJDBCTemplate bean -->

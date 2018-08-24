@@ -23,7 +23,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>socket/EventServer</mainClass>
+                            <mainClass>socket.EventServer</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>

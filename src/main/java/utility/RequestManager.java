@@ -6,6 +6,7 @@ import co.paralleluniverse.strands.SuspendableRunnable;
 import db.DBHandler;
 import manager.ReqTaskType;
 import manager.RequestTask;
+import manager.Task;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
@@ -16,9 +17,12 @@ import org.apache.http.conn.ssl.TrustStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.ssl.SSLContexts;
 import org.apache.http.util.EntityUtils;
+import socket.EventSocket;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
@@ -45,28 +49,31 @@ public class RequestManager {
 
             client = FiberHttpClientBuilder.
                     create(cores * 2).
-                    setUserAgent(USER_AGENT).
+//                    setUserAgent(USER_AGENT).
                     setHostnameVerifier(SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER).
                     setSSLContext(sslContext).
                     setMaxConnPerRoute(1024).
                     setMaxConnTotal(1024).build();
         } catch (Exception e) {
             log.log(Level.SEVERE, "Не удалось инициализировать HTTP Client");
-            log.log(Level.SEVERE, "Exception: ", e);
+            log.log(Level.SEVERE, "Exception: " + e.getMessage());
         }
     }
 
-    public static List<RequestTask> execute(ArrayList<RequestTask> tasks) throws Exception {
+    public static List<RequestTask> execute(String token, ArrayList<RequestTask> tasks) throws Exception {
 
         if (client == null)
             initClient();
 
+        ReqTaskType type = tasks.get(0).getType();
         HashSet<RequestTask> result = new HashSet<>();
 
         ArrayList<RequestConfig> allProxy = ProxyManager.getProxy();
         ArrayList<RequestConfig> goodProxy = new ArrayList<>();
 
         final long startTime = new Date().getTime();
+        final int initTaskSize = tasks.size();
+
         ArrayList<RequestTask> taskMultiply = new ArrayList<>(tasks);
 
         Integer waveCount = 0;
@@ -93,8 +100,8 @@ public class RequestManager {
             wave = taskMultiply.size();
 
             tasks.clear();
-            for (int i = 0; tasks.size() < (allProxy.size() > 1024 ? 1024 : allProxy.size())
-                    && tasks.size() < (taskMultiply.size() * (taskMultiply.size() == 1 ? 1 : 4)); i++) {
+            for (int i = 0; tasks.size() < (allProxy.size() > 2048 ? 2048 : allProxy.size())
+                    && tasks.size() < (taskMultiply.size() * (taskMultiply.size() == 1 ? 1 : 5)); i++) {
                 if (i == taskMultiply.size())
                     i = 0;
 
@@ -115,7 +122,8 @@ public class RequestManager {
                 new Fiber<Void>((SuspendableRunnable) () -> {
                     HttpEntity entity = null;
                     try {
-                        String taskUrl = task.getUrl().replaceAll("https", "http");
+                        String taskUrl = URLDecoder.decode(task.getUrl(), StandardCharsets.UTF_8.toString())
+                                .replaceAll("https", "http");
                         HttpGet request = new HttpGet(taskUrl);
                         if (tasks.size() != 1)
                             request.setConfig(proxy);
@@ -151,8 +159,18 @@ public class RequestManager {
             cdl.await(10, TimeUnit.SECONDS);
 
             taskMultiply.removeAll(result);
-            if (resultStatus == result.size() && taskMultiply.size() != 0 && failCount > 3) {
+            if (resultStatus == result.size() && taskMultiply.size() != 0 && failCount > 2) {
                 taskMultiply.clear();
+            }
+
+
+            if (type == ReqTaskType.ITEM) {
+                log.info("-------------------------------------------------");
+                log.info("RESULT_SIZE: " + result.size());
+                int progress = (int) ((result.size() * 1.0 / initTaskSize) * 100);
+                log.info("SEND PROGRESS: " + progress);
+                EventSocket.sendMessage(token,
+                        "{\"message\":\"status\",\"parameters\":[{\"name\":\"complete\",\"value\":\"" + progress + "\"}]}");
             }
         }
 

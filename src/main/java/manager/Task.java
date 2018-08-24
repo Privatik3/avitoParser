@@ -17,6 +17,7 @@ import utility.RequestManager;
 import java.io.IOException;
 import java.net.URL;
 import java.util.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class Task {
@@ -45,6 +46,7 @@ public class Task {
             param.remove("title");
         }
 
+        param.entrySet().removeIf(next -> next.getValue().isEmpty());
         reportFilter = getReportFilters(param);
         reqTasks = initTasks(param);
     }
@@ -85,93 +87,96 @@ public class Task {
     }
 
     public void start() throws Exception {
-            long startTime = new Date().getTime();
+        long startTime = new Date().getTime();
+        try {
+            EventSocket.checkToken(token);
+            log.info("Выполняем запрос на выкачку страниц каталога");
+            List<RequestTask> pagesHtml = RequestManager.execute(token, reqTasks);
+            reqTasks.clear();
 
-            try {
-                EventSocket.checkToken(token);
-                log.info("Выполняем запрос на выкачку страниц каталога");
-                List<RequestTask> pagesHtml = RequestManager.execute(reqTasks);
-                reqTasks.clear();
+            List<PageInfo> pageInfo = AvitoParser.parsePages(pagesHtml);
+            pagesHtml.clear();
 
-                List<PageInfo> pageInfo = AvitoParser.parsePages(pagesHtml);
-                pagesHtml.clear();
+            log.info("-------------------------------------------------");
+            log.info("Формируем начальный список результатов");
+            for (PageInfo info : pageInfo) {
+                result.add(new Ad(info));
+                reqTasks.add(new RequestTask(info.getId(), info.getUrl().replace("www", "m"), ReqTaskType.ITEM));
+            }
+            pageInfo.clear();
 
+            if (reqTasks.size() == 0)
+                throw new ZeroResultException("Получено 0 обьявлений, попробуйте другой запрос");
+
+            EventSocket.checkToken(token);
+            log.info("-------------------------------------------------");
+            log.info("Выполняем запрос на выкачку страниц обьявлений");
+            List<RequestTask> itemsHtml = RequestManager.execute(token, reqTasks);
+            reqTasks.clear();
+
+            List<ItemInfo> itemInfo = AvitoParser.parseItems(itemsHtml);
+            itemsHtml.clear();
+
+            log.info("-------------------------------------------------");
+            log.info("Дополняем результат информацией полечунной со страниц обьявления");
+            for (ItemInfo info : itemInfo) {
+                String infoID = info.getId();
+
+                Optional<Ad> first = result.stream().filter(itm -> itm.getId().equals(infoID)).findFirst();
+                first.ifPresent(ad -> ad.addPageInfo(info));
+            }
+            itemInfo.clear();
+
+            if (reportFilter.isDate()) {
                 log.info("-------------------------------------------------");
-                log.info("Формируем начальный список результатов");
-                for (PageInfo info : pageInfo) {
-                    result.add(new Ad(info));
-                    reqTasks.add(new RequestTask(info.getId(), info.getUrl().replace("www", "m"), ReqTaskType.ITEM));
+                log.info("Выполняем запрос на выкачку страниц статистики");
+                for (Ad ad : result) {
+                    if (!ad.hasStats()) continue;
+
+                    String url = "https://www.avito.ru/items/stat/" + ad.getId() + "?step=0";
+                    reqTasks.add(new RequestTask(ad.getId(), url, ReqTaskType.STATS));
                 }
-                pageInfo.clear();
-
-                if (reqTasks.size() == 0)
-                    throw new ZeroResultException("Получено 0 обьявлений, попробуйте другой запрос");
 
                 EventSocket.checkToken(token);
-                log.info("-------------------------------------------------");
-                log.info("Выполняем запрос на выкачку страниц обьявлений");
-                List<RequestTask> itemsHtml = RequestManager.execute(reqTasks);
+                List<RequestTask> statsHtml = RequestManager.execute(token, reqTasks);
                 reqTasks.clear();
 
-                List<ItemInfo> itemInfo = AvitoParser.parseItems(itemsHtml);
-                itemsHtml.clear();
+                List<StatInfo> statInfo = AvitoParser.parseStats(statsHtml);
+                statsHtml.clear();
 
                 log.info("-------------------------------------------------");
-                log.info("Дополняем результат информацией полечунной со страниц обьявления");
-                for (ItemInfo info : itemInfo) {
+                log.info("Дополняем результат, статистекой просмотров");
+                for (StatInfo info : statInfo) {
                     String infoID = info.getId();
 
                     Optional<Ad> first = result.stream().filter(itm -> itm.getId().equals(infoID)).findFirst();
-                    first.ifPresent(ad -> ad.addPageInfo(info));
+                    first.ifPresent(ad -> ad.addStatInfo(info));
                 }
-                itemInfo.clear();
-
-                if (reportFilter.isDate()) {
-                    log.info("-------------------------------------------------");
-                    log.info("Выполняем запрос на выкачку страниц статистики");
-                    for (Ad ad : result) {
-                        if (!ad.hasStats()) continue;
-
-                        String url = "https://www.avito.ru/items/stat/" + ad.getId() + "?step=0";
-                        reqTasks.add(new RequestTask(ad.getId(), url, ReqTaskType.STATS));
-                    }
-
-                    EventSocket.checkToken(token);
-                    List<RequestTask> statsHtml = RequestManager.execute(reqTasks);
-                    reqTasks.clear();
-
-                    List<StatInfo> statInfo = AvitoParser.parseStats(statsHtml);
-                    statsHtml.clear();
-
-                    log.info("-------------------------------------------------");
-                    log.info("Дополняем результат, статистекой просмотров");
-                    for (StatInfo info : statInfo) {
-                        String infoID = info.getId();
-
-                        Optional<Ad> first = result.stream().filter(itm -> itm.getId().equals(infoID)).findFirst();
-                        first.ifPresent(ad -> ad.addStatInfo(info));
-                    }
-                    statInfo.clear();
-                }
-
-
-                int endTime = (int) (new Date().getTime() - (startTime));
-                log.info("-------------------------------------------------");
-                log.info("ПОЛНОЕ ВРЕМЯ ВЫПОЛНЕНИЯ: " + endTime + " ms");
-                log.info("-------------------------------------------------");
-
-                EventSocket.checkToken(token);
-                RequestManager.closeClient();
-                this.resultLink = SheetsExample.generateSheet(title, result, reportFilter);
-
-                //API
-                DBHandler.saveHistory(new History(ip, token, title, result.size(), endTime, resultLink));
-                result.clear();
-            } catch (ZeroResultException zeroEx) {
-              throw zeroEx;
-            } catch (Exception e) {
-                throw new Exception("Ошибка во время парсинга");
+                statInfo.clear();
             }
+
+            int endTime = (int) (new Date().getTime() - (startTime));
+            log.info("-------------------------------------------------");
+            log.info("ПОЛНОЕ ВРЕМЯ ВЫПОЛНЕНИЯ: " + endTime + " ms");
+            log.info("-------------------------------------------------");
+
+            EventSocket.checkToken(token);
+            RequestManager.closeClient();
+            this.resultLink = SheetsExample.generateSheet(title, result, reportFilter);
+
+            // API
+//            log.info("-------------------------------------------------");
+//            log.info("Сохраняем историю запроса в базу");
+//            DBHandler.saveHistory(new History(ip, token, title, result.size(), endTime, resultLink));
+            result.clear();
+        } catch (ZeroResultException zeroEx) {
+            throw zeroEx;
+        } catch (Exception e) {
+            log.log(Level.SEVERE, "Ошибка во время парсинга");
+            log.log(Level.SEVERE, "Exception: " + e.getMessage());
+//            e.printStackTrace();
+            throw new Exception("Ошибка во время парсинга");
+        }
     }
 
     private ArrayList<RequestTask> initTasks(HashMap<String, String> parameters) throws IOException {
@@ -190,21 +195,28 @@ public class Task {
 
         int parsePages = 1;
         Document doc = res.parse();
-        Elements pagination = doc.select("div.pagination-pages a");
-        if (!pagination.isEmpty()) {
-            Element last = pagination.get(pagination.size() - 1);
-            String lastHref = last.attr("href");
 
-            parsePages = Integer.parseInt(
-                    lastHref.substring(lastHref.indexOf("p=") + 2,
-                    lastHref.contains("&") ? lastHref.indexOf("&") : lastHref.length()));
+        Elements linkCount = doc.select("span.breadcrumbs-link-count");
+        if (linkCount.size() > 0 && Integer.parseInt(linkCount.get(0).text().replace(" ", "")) > 5200) {
+            parsePages = 100;
+        } else {
+            Elements pagination = doc.select("div.pagination-pages a");
+            if (!pagination.isEmpty()) {
+                Element last = pagination.get(pagination.size() - 1);
+                String lastHref = last.attr("href");
+
+                parsePages = Integer.parseInt(
+                        lastHref.substring(lastHref.indexOf("p=") + 2,
+                                lastHref.contains("&") ? lastHref.indexOf("&") : lastHref.length()));
+            }
         }
 
-        pages = pages < parsePages ? pages : parsePages;
+        pages = parsePages > pages ? pages : parsePages;
         URL url = res.url();
 
         for (int i = 1; i <= pages; i++) {
-            RequestTask page = new RequestTask(String.valueOf(i), url + "&p=" + i, ReqTaskType.CATEGORY);
+            RequestTask page = new RequestTask(
+                    String.valueOf(i), url + (url.toString().contains("?") ? "&" : "?") + "p=" + i, ReqTaskType.CATEGORY);
             result.add(page);
         }
 
