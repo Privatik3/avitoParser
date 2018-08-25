@@ -1,38 +1,53 @@
 package db;
 
 import api.History;
+import com.mysql.cj.jdbc.MysqlDataSource;
 import manager.RequestTask;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
 
+import javax.sql.DataSource;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class DBHandler {
 
-    private static JDBCTemplate jdbcTemplate;
+    private static JDBCTemplate jdbcTemplate = null;
 
     static {
-        try {
-            ApplicationContext context = new ClassPathXmlApplicationContext("Beans.xml");
-            jdbcTemplate = (JDBCTemplate) context.getBean("adJDBCTemplate");
-        } catch (Exception e) {
+        Properties props = new Properties();
+
+        try(FileInputStream fis = new FileInputStream("db.properties")) {
+            props.load(fis);
+            MysqlDataSource mysqlDS = new MysqlDataSource();
+            mysqlDS.setURL(props.getProperty("MYSQL_DB_URL"));
+            mysqlDS.setUser(props.getProperty("MYSQL_DB_USERNAME"));
+            mysqlDS.setPassword(props.getProperty("MYSQL_DB_PASSWORD"));
+
+            jdbcTemplate = new JDBCTemplate();
+            jdbcTemplate.setDataSource(mysqlDS);
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     public static void saveHistory(History record) {
-        jdbcTemplate.createHistoryRecord(record);
+        if (jdbcTemplate != null)
+            jdbcTemplate.createHistoryRecord(record);
     }
 
     public static List<History> getHistoryByNick(String nick) {
-        return jdbcTemplate.getHistory(nick);
+        if (jdbcTemplate != null)
+            return jdbcTemplate.getHistory(nick);
+        else
+            return new ArrayList<>();
     }
 
 

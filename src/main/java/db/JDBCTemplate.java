@@ -22,8 +22,6 @@ public class JDBCTemplate {
     }
 
     public void createHistoryRecord(History record) {
-
-        try {
             String SQL =
                     "INSERT into history (ip, nick, title, report, result_count, time) " +
                             "VALUES (:ip, :nick, :title, :report, :result_count, :time);";
@@ -37,8 +35,6 @@ public class JDBCTemplate {
             parameter.addValue("time", record.getTime());
 
             jdbcTemplateObject.update(SQL, parameter);
-        } catch (Exception ignored) {
-        }
     }
 
     public List<History> getHistory(String nick) {

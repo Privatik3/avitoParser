@@ -29,7 +29,7 @@ public class TaskManager {
         });
         system.addHandler(handler);
         system.setUseParentHandlers(false);
-        System.setErr(null);
+//        System.setErr(null);
         system.info("-------------------------------------------------");
         doTask();
     }
@@ -40,7 +40,7 @@ public class TaskManager {
             Task task = new Task(token, parameters);
             tasks.add(task);
         } catch (Exception e) {
-            EventSocket.sendMessage(token, "{\"message\":\"error\",\"parameters\":[{\"name\":\"msg\",\"value\":\"Не удалось инициализировать таск\"}]}");
+            EventSocket.sendMessage(token, "{\"message\":\"error\",\"parameters\":[{\"name\":\"msg\",\"value\":\"Ошибка во время создания запроса, возможно на авито нет обьявлений, по выбранным вами критериям.\"}]}");
             EventSocket.closeToken(token);
             return;
         }
@@ -68,8 +68,6 @@ public class TaskManager {
                         EventSocket.checkToken(token);
 
                         task.start();
-
-                        EventSocket.sendResult(task);
                         updateQuery();
 
                         System.gc();

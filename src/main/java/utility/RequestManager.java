@@ -52,8 +52,8 @@ public class RequestManager {
 //                    setUserAgent(USER_AGENT).
                     setHostnameVerifier(SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER).
                     setSSLContext(sslContext).
-                    setMaxConnPerRoute(1024).
-                    setMaxConnTotal(1024).build();
+                    setMaxConnPerRoute(2048).
+                    setMaxConnTotal(2048).build();
         } catch (Exception e) {
             log.log(Level.SEVERE, "Не удалось инициализировать HTTP Client");
             log.log(Level.SEVERE, "Exception: " + e.getMessage());
@@ -94,8 +94,10 @@ public class RequestManager {
             log.info("Инициализируем новую волну, осталось: " + taskMultiply.size() + " тасков");
 
             if (wave != 0) {
-                parseSpeed = ((parseSpeed * waveCount) + (wave - taskMultiply.size())) / ++waveCount;
-                log.info("Среднее количество страниц на волну: " + parseSpeed);
+//                parseSpeed = ((parseSpeed * waveCount) + (wave - taskMultiply.size())) / ++waveCount;
+                parseSpeed = (parseSpeed * waveCount) + (wave - taskMultiply.size());
+//                log.info("Среднее количество страниц на волну: " + parseSpeed);
+                log.info("Получено результатов на волну: " + parseSpeed);
             }
             wave = taskMultiply.size();
 
@@ -159,7 +161,7 @@ public class RequestManager {
             cdl.await(10, TimeUnit.SECONDS);
 
             taskMultiply.removeAll(result);
-            if (resultStatus == result.size() && taskMultiply.size() != 0 && failCount > 2) {
+            if ((type == ReqTaskType.STATS && (parseSpeed > 0 && parseSpeed < 20)) || (resultStatus == result.size() && taskMultiply.size() != 0 && failCount > 1)) {
                 taskMultiply.clear();
             }
 

@@ -118,16 +118,20 @@ public class SheetsExample {
                 String views = "";
                 try {
                     views = ad.getViews();
-                } catch (Exception ignore) { }
-                if (views == null || views.isEmpty()) views = "0";
-                clValues.add(getCellData(Integer.parseInt(views)));
+                    clValues.add(getCellData(Integer.parseInt(views)));
+                } catch (Exception ignore) {
+                    clValues.add(getCellData(0));
+                }
+
 
                 String dailyViews = "";
                 try {
                     dailyViews = ad.getDailyViews();
-                } catch (Exception ignore) {}
-                if (dailyViews == null || dailyViews.isEmpty()) dailyViews = (ad.getViews().isEmpty() ? "0" : ad.getViews());
-                clValues.add(getCellData(Integer.parseInt(dailyViews)));
+                    clValues.add(getCellData(Integer.parseInt(dailyViews)));
+                } catch (Exception ignore) {
+                    clValues.add(getCellData(0));
+                }
+
 
                 String services = "";
                 try {
@@ -244,26 +248,27 @@ public class SheetsExample {
                         } catch (Exception ignore) {
                         }
                         clValues.add(getCellData(dateApplication));
-                        String viewsTenDay = "0";
-                        try {
-                            viewsTenDay = ad.getViewsTenDay();
-                        } catch (Exception ignore) { }
-                        if (viewsTenDay == null || viewsTenDay.isEmpty()) viewsTenDay = (ad.getViews().isEmpty() ? "0" : ad.getViews());
-                        clValues.add(getCellData(Integer.parseInt(viewsTenDay)));
 
-                        String viewsAverageTenDay = "0";
                         try {
-                            viewsAverageTenDay = ad.getViewsAverageTenDay();
-                        } catch (Exception ignore) {}
-                        if (viewsAverageTenDay == null || viewsAverageTenDay.isEmpty()) viewsAverageTenDay = (ad.getViews().isEmpty() ? "0" : ad.getViews());
-                        clValues.add(getCellData(Integer.parseInt(viewsAverageTenDay)));
+                            String viewsTenDay = ad.getViewsTenDay();
+                            clValues.add(getCellData(Integer.parseInt(viewsTenDay)));
+                        } catch (Exception ignore) {
+                            clValues.add(getCellData(0));
+                        }
+
+                        try {
+                            String viewsAverageTenDay = ad.getViewsAverageTenDay();
+                            clValues.add(getCellData(Integer.parseInt(viewsAverageTenDay)));
+                        } catch (Exception ignore) {
+                            clValues.add(getCellData(0));
+                        }
+
                     } else {
                         clValues.add(getCellData(new SimpleDateFormat("yyyy.MM.dd").format(new Date())));
-                        clValues.add(getCellData(0));
-                        clValues.add(getCellData(0));
+                        clValues.add(getCellData(ad.getViews()));
+                        clValues.add(getCellData(ad.getViews()));
                     }
                 }
-
 
                 rowVal.setValues(clValues);
                 rData.add(rowVal);

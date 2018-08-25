@@ -5,6 +5,7 @@ import db.DBHandler;
 import google.ReportFilter;
 import google.SheetsExample;
 import manager.exeption.ZeroResultException;
+import org.eclipse.jetty.util.UrlEncoded;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -90,6 +91,9 @@ public class Task {
         long startTime = new Date().getTime();
         try {
             EventSocket.checkToken(token);
+            if (reqTasks.size() == 0)
+                throw new ZeroResultException("Получено 0 обьявлений, попробуйте другой запрос");
+
             log.info("Выполняем запрос на выкачку страниц каталога");
             List<RequestTask> pagesHtml = RequestManager.execute(token, reqTasks);
             reqTasks.clear();
@@ -104,7 +108,6 @@ public class Task {
                 reqTasks.add(new RequestTask(info.getId(), info.getUrl().replace("www", "m"), ReqTaskType.ITEM));
             }
             pageInfo.clear();
-
             if (reqTasks.size() == 0)
                 throw new ZeroResultException("Получено 0 обьявлений, попробуйте другой запрос");
 
@@ -128,10 +131,12 @@ public class Task {
             itemInfo.clear();
 
             if (reportFilter.isDate()) {
+                RequestManager.closeClient();
+
                 log.info("-------------------------------------------------");
                 log.info("Выполняем запрос на выкачку страниц статистики");
                 for (Ad ad : result) {
-                    if (!ad.hasStats()) continue;
+                    if (ad.hasStats() == null || !ad.hasStats()) continue;
 
                     String url = "https://www.avito.ru/items/stat/" + ad.getId() + "?step=0";
                     reqTasks.add(new RequestTask(ad.getId(), url, ReqTaskType.STATS));
@@ -162,19 +167,21 @@ public class Task {
 
             EventSocket.checkToken(token);
             RequestManager.closeClient();
+
             this.resultLink = SheetsExample.generateSheet(title, result, reportFilter);
+            EventSocket.sendResult(this);
 
             // API
-//            log.info("-------------------------------------------------");
-//            log.info("Сохраняем историю запроса в базу");
-//            DBHandler.saveHistory(new History(ip, token, title, result.size(), endTime, resultLink));
+            log.info("-------------------------------------------------");
+            log.info("Сохраняем историю запроса в базу");
+            DBHandler.saveHistory(new History(ip, token, title, result.size(), endTime, resultLink));
             result.clear();
         } catch (ZeroResultException zeroEx) {
             throw zeroEx;
         } catch (Exception e) {
             log.log(Level.SEVERE, "Ошибка во время парсинга");
             log.log(Level.SEVERE, "Exception: " + e.getMessage());
-//            e.printStackTrace();
+            e.printStackTrace();
             throw new Exception("Ошибка во время парсинга");
         }
     }
@@ -185,6 +192,9 @@ public class Task {
 
         int pages = Integer.parseInt(parameters.get("max_pages"));
         parameters.remove("max_pages");
+
+        if (parameters.containsKey("name"))
+            parameters.put("name", parameters.get("name").replace(" ", "+"));
 
         Connection.Response res = Jsoup.connect("https://www.avito.ru/search")
                 .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:61.0) Gecko/20100101 Firefox/61.0")
@@ -197,8 +207,13 @@ public class Task {
         Document doc = res.parse();
 
         Elements linkCount = doc.select("span.breadcrumbs-link-count");
-        if (linkCount.size() > 0 && Integer.parseInt(linkCount.get(0).text().replace(" ", "")) > 5200) {
-            parsePages = 100;
+        if (linkCount.size() > 0) {
+            try {
+                int allAds = Integer.parseInt(linkCount.get(0).text().replace(" ", ""));
+                if (allAds > 50)
+                    parsePages = allAds / 50;
+            } catch (Exception ignored) {
+            }
         } else {
             Elements pagination = doc.select("div.pagination-pages a");
             if (!pagination.isEmpty()) {
