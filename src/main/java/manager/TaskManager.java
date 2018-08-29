@@ -34,13 +34,13 @@ public class TaskManager {
         doTask();
     }
 
-    public static void initTask(String token, HashMap<String, String> parameters) {
+    public static void initTask(String token, HashMap<String, ArrayList<String>> params) {
 
         try {
-            Task task = new Task(token, parameters);
+            Task task = new Task(token, params);
             tasks.add(task);
         } catch (Exception e) {
-            EventSocket.sendMessage(token, "{\"message\":\"error\",\"parameters\":[{\"name\":\"msg\",\"value\":\"Ошибка во время создания запроса, возможно на авито нет обьявлений, по выбранным вами критериям.\"}]}");
+            EventSocket.sendMessage(token, "{\"message\":\"error\",\"parameters\":[{\"name\":\"msg\",\"value\":\"" + e.getMessage() + "\"}]}");
             EventSocket.closeToken(token);
             return;
         }

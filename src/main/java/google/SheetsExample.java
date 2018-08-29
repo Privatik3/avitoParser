@@ -265,8 +265,18 @@ public class SheetsExample {
 
                     } else {
                         clValues.add(getCellData(new SimpleDateFormat("yyyy.MM.dd").format(new Date())));
-                        clValues.add(getCellData(ad.getViews()));
-                        clValues.add(getCellData(ad.getViews()));
+
+                        try {
+                            clValues.add(getCellData(Integer.parseInt(ad.getViews())));
+                        } catch (Exception ignore) {
+                            clValues.add(getCellData(0));
+                        }
+
+                        try {
+                            clValues.add(getCellData(Integer.parseInt(ad.getViews())));
+                        } catch (Exception e) {
+                            clValues.add(getCellData(0));
+                        }
                     }
                 }
 

@@ -59,8 +59,8 @@ public class MainTest {
 //        parameters.put("date", "true");
 //        parameters.put("phone", "true");
 
-        TaskManager.initTask("xiiiangel", parameters);
+//        TaskManager.initTask("xiiiangel", parameters);
 
-        TaskManager.doTask();
+//        TaskManager.doTask();
     }
 }

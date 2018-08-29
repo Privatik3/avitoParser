@@ -14,6 +14,7 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -79,12 +80,14 @@ public class EventSocket {
                 System.out.println("Получена команда к старту, ПАРАМЕТРЫ:");
                 JSONArray params = obj.getJSONArray("parameters");
 
-                HashMap<String, String> param = new HashMap<>();
+                HashMap<String, ArrayList<String>> param = new HashMap<>();
                 for (int i = 0; i < params.length(); i++) {
                     String name = params.getJSONObject(i).getString("name");
                     String value = params.getJSONObject(i).getString("value");
 
-                    param.put(name, value);
+                    if (!value.isEmpty())
+                        param.computeIfAbsent(name, k -> new ArrayList<>()).add(value);
+
                     System.out.println("    *" + name + ": " + value);
                 }
 

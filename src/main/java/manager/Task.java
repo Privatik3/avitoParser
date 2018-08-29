@@ -5,9 +5,10 @@ import db.DBHandler;
 import google.ReportFilter;
 import google.SheetsExample;
 import manager.exeption.ZeroResultException;
-import org.eclipse.jetty.util.UrlEncoded;
+import org.json.JSONObject;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
+import org.jsoup.helper.HttpConnection;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -15,7 +16,6 @@ import parser.*;
 import socket.EventSocket;
 import utility.RequestManager;
 
-import java.io.IOException;
 import java.net.URL;
 import java.util.*;
 import java.util.logging.Level;
@@ -34,47 +34,91 @@ public class Task {
     private List<Ad> result = new ArrayList<>();
     private ReportFilter reportFilter;
 
-    public Task(String token, HashMap<String, String> param) throws IOException {
+    public Task(String token, HashMap<String, ArrayList<String>> params) throws Exception {
         this.token = token;
 
-        if (param.containsKey("ip")) {
-            ip = param.get("ip").toLowerCase();
-            param.remove("ip");
+        if (params.containsKey("ip")) {
+            ip = params.get("ip").get(0).toLowerCase();
+            params.remove("ip");
         }
 
-        if (param.containsKey("title")) {
-            title = param.get("title");
-            param.remove("title");
+        if (params.containsKey("title")) {
+            title = params.get("title").get(0);
+            params.remove("title");
         }
 
-        param.entrySet().removeIf(next -> next.getValue().isEmpty());
-        reportFilter = getReportFilters(param);
-        reqTasks = initTasks(param);
+        reportFilter = getReportFilters(params);
+        checkCountOfAds(params);
+        reqTasks = initTasks(params);
     }
 
-    private ReportFilter getReportFilters(HashMap<String, String> param) {
+    private void checkCountOfAds(HashMap<String, ArrayList<String>> initParams) throws Exception {
+
+        try {
+            HashMap<String, ArrayList<String>> params = new HashMap<>(initParams);
+            params.computeIfPresent("bt", (key, value) -> new ArrayList<>(Collections.singletonList("1")));
+            params.computeIfPresent("i", (key, value) -> new ArrayList<>(Collections.singletonList("1")));
+            params.computeIfPresent("d", (key, value) -> new ArrayList<>(Collections.singletonList("1")));
+
+            params.remove("max_pages");
+            params.remove("s");
+            params.remove("user");
+
+            StringBuilder reqUrl = new StringBuilder("https://www.avito.ru/js/catalog?");
+            params.computeIfAbsent("_", k -> new ArrayList<>()).add("6");
+            params.computeIfAbsent("countOnly", k -> new ArrayList<>()).add("1");
+
+            for (Map.Entry<String, ArrayList<String>> param : params.entrySet()) {
+                String name = param.getKey();
+                for (String value : param.getValue())
+                    reqUrl.append(String.format("%s=%s&", name, value));
+            }
+
+            String url = reqUrl.toString().substring(0, reqUrl.length() - 1);
+
+            String genreJson = Jsoup.connect(url)
+                    .timeout(10 * 1000)
+                    .ignoreContentType(true)
+                    .userAgent("Mozilla/5.0 (Windows NT 6.1; rv:40.0) Gecko/20100101 Firefox/40.0")
+                    .method(Connection.Method.GET)
+                    .get()
+                    .body()
+                    .text();
+
+            JSONObject json = new JSONObject(genreJson);
+            int count = json.getInt("count");
+            log.info("Инициализирован запрос по токену: " + token + ". Количество обьявлений: " + count);
+            if (count == 0) throw new ZeroResultException();
+        } catch (ZeroResultException e) {
+            throw new Exception("По вашему запросу было получено 0 обьявлений");
+        } catch (Exception e) {
+            throw new Exception("Ошибка во время создание запроса, попробуйте позже");
+        }
+    }
+
+    private ReportFilter getReportFilters(HashMap<String, ArrayList<String>> params) {
         ReportFilter result = new ReportFilter();
 
-        result.setPhoto(param.containsKey("photo"));
-        param.remove("photo");
+        result.setPhoto(params.containsKey("photo"));
+        params.remove("photo");
 
-        result.setDescription(param.containsKey("description"));
-        param.remove("description");
+        result.setDescription(params.containsKey("description"));
+        params.remove("description");
 
-        result.setDescriptionLength(param.containsKey("descriptionLength"));
-        param.remove("descriptionLength");
+        result.setDescriptionLength(params.containsKey("descriptionLength"));
+        params.remove("descriptionLength");
 
-        result.setSellerName(param.containsKey("sellerName"));
-        param.remove("sellerName");
+        result.setSellerName(params.containsKey("sellerName"));
+        params.remove("sellerName");
 
-        result.setPosition(param.containsKey("position"));
-        param.remove("position");
+        result.setPosition(params.containsKey("position"));
+        params.remove("position");
 
-        result.setDate(param.containsKey("date"));
-        param.remove("date");
+        result.setDate(params.containsKey("date"));
+        params.remove("date");
 
-        result.setPhone(param.containsKey("phone"));
-        param.remove("phone");
+        result.setPhone(params.containsKey("phone"));
+        params.remove("phone");
 
         return result;
     }
@@ -91,8 +135,6 @@ public class Task {
         long startTime = new Date().getTime();
         try {
             EventSocket.checkToken(token);
-            if (reqTasks.size() == 0)
-                throw new ZeroResultException("Получено 0 обьявлений, попробуйте другой запрос");
 
             log.info("Выполняем запрос на выкачку страниц каталога");
             List<RequestTask> pagesHtml = RequestManager.execute(token, reqTasks);
@@ -108,8 +150,6 @@ public class Task {
                 reqTasks.add(new RequestTask(info.getId(), info.getUrl().replace("www", "m"), ReqTaskType.ITEM));
             }
             pageInfo.clear();
-            if (reqTasks.size() == 0)
-                throw new ZeroResultException("Получено 0 обьявлений, попробуйте другой запрос");
 
             EventSocket.checkToken(token);
             log.info("-------------------------------------------------");
@@ -176,8 +216,6 @@ public class Task {
             log.info("Сохраняем историю запроса в базу");
             DBHandler.saveHistory(new History(ip, token, title, result.size(), endTime, resultLink));
             result.clear();
-        } catch (ZeroResultException zeroEx) {
-            throw zeroEx;
         } catch (Exception e) {
             log.log(Level.SEVERE, "Ошибка во время парсинга");
             log.log(Level.SEVERE, "Exception: " + e.getMessage());
@@ -186,53 +224,69 @@ public class Task {
         }
     }
 
-    private ArrayList<RequestTask> initTasks(HashMap<String, String> parameters) throws IOException {
+    private ArrayList<RequestTask> initTasks(HashMap<String, ArrayList<String>> params) throws Exception {
 
         ArrayList<RequestTask> result = new ArrayList<>();
 
-        int pages = Integer.parseInt(parameters.get("max_pages"));
-        parameters.remove("max_pages");
+        try {
+            int pages = Integer.parseInt(params.get("max_pages").get(0));
+            params.remove("max_pages");
 
-        if (parameters.containsKey("name"))
-            parameters.put("name", parameters.get("name").replace(" ", "+"));
+            params.computeIfPresent("name", (key, value) ->
+                    new ArrayList<>(Collections.singletonList(value.get(0).replace(" ", "+"))));
+            Connection.Response res = Jsoup.connect("https://www.avito.ru/search")
+                    .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:61.0) Gecko/20100101 Firefox/61.0")
+                    .followRedirects(true)
+                    .data(convertToData(params))
+                    .method(Connection.Method.POST)
+                    .execute();
 
-        Connection.Response res = Jsoup.connect("https://www.avito.ru/search")
-                .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:61.0) Gecko/20100101 Firefox/61.0")
-                .followRedirects(true)
-                .data(parameters)
-                .method(Connection.Method.POST)
-                .execute();
+            int parsePages = 1;
+            Document doc = res.parse();
 
-        int parsePages = 1;
-        Document doc = res.parse();
+            System.out.println(doc.baseUri());
+            Elements linkCount = doc.select("span.breadcrumbs-link-count");
+            if (linkCount.size() > 0) {
+                try {
+                    int allAds = Integer.parseInt(linkCount.get(0).text().replace(" ", ""));
+                    if (allAds > 50)
+                        parsePages = (allAds / 50) % 50 == 0 ? allAds / 50 : (allAds / 50) + 1;
+                } catch (Exception ignored) { }
+            } else {
+                Elements pagination = doc.select("div.pagination-pages a");
+                if (!pagination.isEmpty()) {
+                    Element last = pagination.get(pagination.size() - 1);
+                    String lastHref = last.attr("href");
 
-        Elements linkCount = doc.select("span.breadcrumbs-link-count");
-        if (linkCount.size() > 0) {
-            try {
-                int allAds = Integer.parseInt(linkCount.get(0).text().replace(" ", ""));
-                if (allAds > 50)
-                    parsePages = allAds / 50;
-            } catch (Exception ignored) {
+                    parsePages = Integer.parseInt(
+                            lastHref.substring(lastHref.indexOf("p=") + 2,
+                                    lastHref.contains("&") ? lastHref.indexOf("&") : lastHref.length()));
+                }
             }
-        } else {
-            Elements pagination = doc.select("div.pagination-pages a");
-            if (!pagination.isEmpty()) {
-                Element last = pagination.get(pagination.size() - 1);
-                String lastHref = last.attr("href");
 
-                parsePages = Integer.parseInt(
-                        lastHref.substring(lastHref.indexOf("p=") + 2,
-                                lastHref.contains("&") ? lastHref.indexOf("&") : lastHref.length()));
+            pages = parsePages > pages ? pages : parsePages;
+            URL url = res.url();
+
+            for (int i = 1; i <= pages; i++) {
+                RequestTask page = new RequestTask(
+                        String.valueOf(i), url + (url.toString().contains("?") ? "&" : "?") + "p=" + i, ReqTaskType.CATEGORY);
+                result.add(page);
             }
+        } catch (Exception e) {
+            throw new Exception("Ошибка во время создание запроса, попробуйте позже");
         }
 
-        pages = parsePages > pages ? pages : parsePages;
-        URL url = res.url();
+        return result;
+    }
 
-        for (int i = 1; i <= pages; i++) {
-            RequestTask page = new RequestTask(
-                    String.valueOf(i), url + (url.toString().contains("?") ? "&" : "?") + "p=" + i, ReqTaskType.CATEGORY);
-            result.add(page);
+    private Collection<Connection.KeyVal> convertToData(HashMap<String, ArrayList<String>> params) {
+
+        ArrayList<Connection.KeyVal> result = new ArrayList<>();
+
+        for (Map.Entry<String, ArrayList<String>> param : params.entrySet()) {
+            String name = param.getKey();
+            for (String value : param.getValue())
+                result.add(HttpConnection.KeyVal.create(name, value));
         }
 
         return result;

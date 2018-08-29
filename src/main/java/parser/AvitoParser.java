@@ -1,6 +1,7 @@
 package parser;
 
 import manager.RequestTask;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -31,7 +32,8 @@ public class AvitoParser {
         for (RequestTask task : tasks) {
             Document doc = Jsoup.parse(task.getHtml());
 
-            for (Element el : doc.select("div.item")) {
+            Elements select1 = doc.select("div.item");
+            for (Element el : select1) {
                 PageInfo item = new PageInfo();
                 item.setPosition(itemPosition++);
                 // Здесь гавнярит Александр
@@ -39,21 +41,27 @@ public class AvitoParser {
                 String id = "";
                 try {
                     id = el.attr("data-item-id");
-                }catch (Exception ignored) {}
+                    if (id.isEmpty()) {
+                        String tmpID = el.attr("id").substring(1);
+                        Integer.parseInt(tmpID);
+                        id = tmpID;
+                    }
+                } catch (Exception ignored) {
+                }
                 item.setId(id);
 
                 String finalId = id;
-                if (result.stream().anyMatch(e -> e.getId().equals(finalId))) {
+                if (id.isEmpty() || result.stream().anyMatch(e -> e.getId().equals(finalId))) {
                     itemPosition--;
                     continue;
                 }
 
-                String url = "";
                 String urlFull = "";
                 try {
-                    url = el.select(".item-photo a").attr("href");
+                    String url = el.select("h3.title a").attr("href");
                     urlFull = "https://www.avito.ru" + url;
-                }catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
                 item.setUrl(urlFull);
 
                 boolean isOnlyUpped = false;
@@ -69,31 +77,45 @@ public class AvitoParser {
                         JSONObject json = new JSONObject(genreJson);
                         try {
                             isPremium = json.getBoolean("isPremium");
-                        }catch (Exception ignored) {}
+                        } catch (Exception ignored) {
+                        }
                         try {
                             isOnlyUpped = json.getBoolean("isOnlyUpped");
-                        }catch (Exception ignored) {}
+                        } catch (Exception ignored) {
+                        }
                         try {
                             isLessTwoVAS = json.getBoolean("isLessTwoVAS");
-                        }catch (Exception ignored) {}
+                        } catch (Exception ignored) {
+                        }
                         try {
                             isVip = json.getBoolean("isVip");
-                        }catch (Exception ignored) {}
+                        } catch (Exception ignored) {
+                        }
                         try {
                             isUrgent = json.getBoolean("isUrgent");
-                        }catch (Exception ignored) {}
+                        } catch (Exception ignored) {
+                        }
                         try {
                             isUpped = json.getBoolean("isUpped");
-                        }catch (Exception ignored) {}
+                        } catch (Exception ignored) {
+                        }
+                    } else {
+                        Elements premiumBlock = el.select("div.vas-applied");
+                        if (premiumBlock.size() > 0) {
+                            isPremium = premiumBlock.select("a[data-vas-type=premium]").size() > 0;
+                            isVip = premiumBlock.select("a[data-vas-type=vip]").size() > 0;
+                            isUrgent = premiumBlock.select("a[data-vas-type=highlight]").size() > 0;
+                            isUpped = premiumBlock.select("a[data-vas-type=pushup]").size() > 0;
+                        }
                     }
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
                 item.setPremium(isPremium);
                 item.setOnlyUpped(isOnlyUpped);
                 item.setLessTwoVAS(isLessTwoVAS);
                 item.setVip(isVip);
                 item.setUrgent(isUrgent);
                 item.setUpped(isUpped);
-
 
 
 //                item.setId();
@@ -129,7 +151,8 @@ public class AvitoParser {
                 else
                     continue;
 
-            } catch (Exception ignore) {}
+            } catch (Exception ignore) {
+            }
             JSONObject ob = new JSONObject(json);
 
             ItemInfo item = new ItemInfo();
@@ -139,69 +162,89 @@ public class AvitoParser {
             String title = "";
             try {
                 title = ob.getJSONObject("item").getJSONObject("currentItem").getString("title");
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
             item.setTitle(title);
 
             String price = "";
             try {
                 price = ob.getJSONObject("item").getJSONObject("currentItem").getJSONObject("price").getString("value");
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
             item.setPrice(price);
 
             int views = 0;
             try {
                 views = ob.getJSONObject("item").getJSONObject("currentItem").getJSONObject("stats").getJSONObject("views").getInt("total");
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
             item.setViews(String.valueOf(views));
 
             int dailyViews = 0;
             try {
                 dailyViews = ob.getJSONObject("item").getJSONObject("currentItem").getJSONObject("stats").getJSONObject("views").getInt("today");
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
             item.setDailyViews(String.valueOf(dailyViews));
 
             String address = "";
             try {
-                address = ob.getJSONObject("item").getJSONObject("currentItem").getString("address");
+                try {
+                    address = ob.getJSONObject("item").getJSONObject("currentItem").getString("address");
+                } catch (Exception ignored) {}
+
                 if (address.isEmpty()) {
-                    address = ob.getJSONObject("item").getJSONObject("currentItem").getJSONObject("refs").getJSONObject("locations").getJSONObject("653240").getString("name");
+                    JSONObject locations = ob.getJSONObject("item").getJSONObject("currentItem").getJSONObject("refs").getJSONObject("locations");
+                    for (String key : locations.keySet())
+                        address += locations.getJSONObject(key).getString("name") + ", ";
+
+                    JSONObject metro = ob.getJSONObject("item").getJSONObject("currentItem").getJSONObject("refs").getJSONObject("metro");
+                    for (String key : metro.keySet())
+                        address += "м. " + metro.getJSONObject(key).getString("name") + ", ";
                 }
-            } catch (Exception ignored) {}
-            item.setAddress(address);
+            } catch (Exception ignored) {
+                ignored.printStackTrace();
+            }
+            item.setAddress(address.endsWith(", ") ? address.substring(0, address.length() - 2) : address);
 
             String dataNew = "";
             try {
                 long data = ob.getJSONObject("item").getJSONObject("currentItem").getLong("time");
                 dataNew = new SimpleDateFormat("yyyy.MM.dd HH:mm").format(new Date(data * 1000L));
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
             item.setData(String.valueOf(dataNew));
 
             String numberPictures = "0";
             try {
                 numberPictures = String.valueOf(ob.getJSONObject("item").getJSONObject("currentItem").getJSONArray("images").length());
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
             item.setNumberPictures(numberPictures);
 
             String description = "";
-            String quantityText = "";
+            String quantityText = "0";
             try {
                 description = ob.getJSONObject("item").getJSONObject("currentItem").getString("description").replaceAll("\n", " ");
                 quantityText = String.valueOf(description.length());
                 description = description.trim();
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
             item.setText(description);
             item.setQuantityText(quantityText);
 
             String seller = "";
             try {
                 seller = ob.getJSONObject("item").getJSONObject("currentItem").getJSONObject("seller").getString("name");
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
             item.setSeller(seller);
 
             int sellerId = 0;
             try {
                 sellerId = ob.getJSONObject("item").getJSONObject("currentItem").getInt("id");
-            }catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
             item.setSellerId(String.valueOf(sellerId));
 
             String phone = "";
@@ -209,15 +252,17 @@ public class AvitoParser {
                 JSONObject contactList = ob.getJSONObject("item").getJSONObject("currentItem").getJSONObject("contacts").getJSONArray("list").getJSONObject(0);
                 phone = contactList.getJSONObject("value").getString("uri");
                 phone = URLDecoder.decode(phone.substring(phone.lastIndexOf("=") + 1));
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
             item.setPhone(phone);
 
             Boolean hasStats = true;
             try {
-            if (views == dailyViews) {
-                hasStats = false;
+                if (views == dailyViews) {
+                    hasStats = false;
+                }
+            } catch (Exception ignored) {
             }
-            }catch (Exception ignored) {}
             item.setHasStats(hasStats);
 
             // Здесь уже норм код
@@ -247,16 +292,52 @@ public class AvitoParser {
             try {
                 dateApplication = doc.select("div.item-stats__date strong").text();
                 String day = dateApplication.split(" ")[0];
-                if (day.length() <= 1){
+                if (day.length() <= 1) {
                     day = "0" + day;
                 }
                 String monthData = dateApplication.split(" ")[1];
                 String year = dateApplication.split(" ")[2];
-                    switch (monthData) {
-                        case "января": monthData = "01";break;case "февраля": monthData = "02";break;case "марта": monthData = "03";break;case "апреля": monthData = "04";break;case "мая": monthData = "05";break;case "июня": monthData = "06";break;case "июля": monthData = "07";break;case "августа": monthData = "08";break;case "сентября": monthData = "09";break;case "октября": monthData = "10";break;case "ноября": monthData = "11";break;case "декабря": monthData = "12";break;
-                    }
+                switch (monthData) {
+                    case "января":
+                        monthData = "01";
+                        break;
+                    case "февраля":
+                        monthData = "02";
+                        break;
+                    case "марта":
+                        monthData = "03";
+                        break;
+                    case "апреля":
+                        monthData = "04";
+                        break;
+                    case "мая":
+                        monthData = "05";
+                        break;
+                    case "июня":
+                        monthData = "06";
+                        break;
+                    case "июля":
+                        monthData = "07";
+                        break;
+                    case "августа":
+                        monthData = "08";
+                        break;
+                    case "сентября":
+                        monthData = "09";
+                        break;
+                    case "октября":
+                        monthData = "10";
+                        break;
+                    case "ноября":
+                        monthData = "11";
+                        break;
+                    case "декабря":
+                        monthData = "12";
+                        break;
+                }
                 dateApplication = year + "." + monthData + "." + day;
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
             item.setDateApplication(dateApplication);
 
             // Стата просмотров хранится в json ( небольшая помощь )
@@ -266,14 +347,15 @@ public class AvitoParser {
             int viewsTenDayArray = 0;
             String viewsTenDay = "0";
             try {
-                int viewsTenDayArrayNew = chart.getJSONArray("columns").getJSONArray(1).length() -1;
+                int viewsTenDayArrayNew = chart.getJSONArray("columns").getJSONArray(1).length() - 1;
                 int viewsTenDayArrayTest = viewsTenDayArrayNew;
-                for ( int x = 0 ; (viewsTenDayArrayNew > 10) ? x <= 10: x <= (viewsTenDayArrayNew - 1)  ; x++ ) {
-                int viewsTenDayTest = chart.getJSONArray("columns").getJSONArray(1).getInt(viewsTenDayArrayTest--);
-                viewsTenDayArray = viewsTenDayArray + viewsTenDayTest;
+                for (int x = 0; (viewsTenDayArrayNew > 10) ? x <= 10 : x <= (viewsTenDayArrayNew - 1); x++) {
+                    int viewsTenDayTest = chart.getJSONArray("columns").getJSONArray(1).getInt(viewsTenDayArrayTest--);
+                    viewsTenDayArray = viewsTenDayArray + viewsTenDayTest;
                 }
-                viewsTenDay = String.valueOf((viewsTenDayArrayNew > 10) ? viewsTenDayArray / 10:  viewsTenDayArray / viewsTenDayArrayNew) ;
-            } catch (Exception ignored) {}
+                viewsTenDay = String.valueOf((viewsTenDayArrayNew > 10) ? viewsTenDayArray / 10 : viewsTenDayArray / viewsTenDayArrayNew);
+            } catch (Exception ignored) {
+            }
             item.setViewsTenDay(String.valueOf(viewsTenDayArray));
             item.setViewsAverageTenDay(viewsTenDay);
 
