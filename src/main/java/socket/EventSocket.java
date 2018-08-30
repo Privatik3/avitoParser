@@ -44,6 +44,8 @@ public class EventSocket {
     public void onWebSocketConnect(Session sess) throws IOException {
         String token = getToken(sess);
         if (allTokens.containsKey(token)) {
+            String message = "{\"message\":\"error\",\"parameters\":[{\"name\":\"msg\",\"value\":\"Не удалось открыть соединения, возможно вы уже запустили парсинг.\"}]}";
+            sess.getBasicRemote().sendText(message);
             sess.close();
         } else {
             System.out.println("ТОКЕН ДОБАВЛЕН В БАЗУ: " + token);

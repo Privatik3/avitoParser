@@ -82,7 +82,6 @@ public class RequestManager {
         Integer resultStatus = 0;
         Integer failCount = 0;
 
-        ArrayList<RequestConfig> proxys;
         while (tasks.size() > 0) {
 
             if (resultStatus == result.size())
@@ -112,14 +111,16 @@ public class RequestManager {
 
             final CountDownLatch cdl = new CountDownLatch(tasks.size());
 
-            proxys = new ArrayList<>(goodProxy);
-            goodProxy.clear();
-            if (goodProxy.size() < tasks.size())
-                proxys.addAll(allProxy);
+            final ArrayList<RequestConfig> fixedGood = new ArrayList<>(goodProxy);
+            allProxy.removeIf(fixedGood::contains);
+            fixedGood.forEach(p -> allProxy.add(0, p));
 
-            for (int i = 0; i < proxys.size() && i < tasks.size(); i++) {
+            fixedGood.clear();
+            goodProxy.clear();
+
+            for (int i = 0; i < allProxy.size() && i < tasks.size(); i++) {
                 RequestTask task = tasks.get(i);
-                RequestConfig proxy = proxys.get(i);
+                RequestConfig proxy = allProxy.get(i);
 
                 new Fiber<Void>((SuspendableRunnable) () -> {
                     HttpEntity entity = null;
@@ -161,10 +162,9 @@ public class RequestManager {
             cdl.await(10, TimeUnit.SECONDS);
 
             taskMultiply.removeAll(result);
-            if ((type == ReqTaskType.STATS && (parseSpeed > 0 && parseSpeed < 20)) || (resultStatus == result.size() && taskMultiply.size() != 0 && failCount > 1)) {
+            if ((type == ReqTaskType.STATS && (parseSpeed > 0 && parseSpeed < (initTaskSize > 2000 ? 100 : initTaskSize / 20))) || (resultStatus == result.size() && taskMultiply.size() != 0 && failCount > 1)) {
                 taskMultiply.clear();
             }
-
 
             if (type == ReqTaskType.ITEM) {
                 log.info("-------------------------------------------------");
@@ -178,6 +178,9 @@ public class RequestManager {
 
         log.info("-------------------------------------------------");
         log.info("Закончили парсить, затраченное время: " + (new Date().getTime() - startTime) + " ms");
+
+        ProxyManager.sort(allProxy);
+        allProxy.clear();
 
         return new ArrayList<>(result);
     }

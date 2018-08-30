@@ -202,9 +202,7 @@ public class AvitoParser {
                     for (String key : metro.keySet())
                         address += "м. " + metro.getJSONObject(key).getString("name") + ", ";
                 }
-            } catch (Exception ignored) {
-                ignored.printStackTrace();
-            }
+            } catch (Exception ignored) {}
             item.setAddress(address.endsWith(", ") ? address.substring(0, address.length() - 2) : address);
 
             String dataNew = "";
