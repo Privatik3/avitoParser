@@ -493,8 +493,8 @@ public class SheetsExample {
 
         clHeaders.add(getCellData("Заголовок"));
         clHeaders.add(getCellData("Цена"));
-        clHeaders.add(getCellData("(ʘʘ) Всего"));
-        clHeaders.add(getCellData("(ʘʘ) За день"));
+        clHeaders.add(getCellData("просм. Всего"));
+        clHeaders.add(getCellData("просм. За день"));
         clHeaders.add(getCellData("Методы продвижения"));
         clHeaders.add(getCellData("Адрес"));
         clHeaders.add(getCellData("Дата"));
@@ -516,12 +516,12 @@ public class SheetsExample {
             clHeaders.add(getCellData("Телефон"));
         }
         if (filters.isPosition()) {
-            clHeaders.add(getCellData("Позиция в выдачу"));
+            clHeaders.add(getCellData("Позиция в выдаче"));
         }
         if (filters.isDate()) {
             clHeaders.add(getCellData("Дата Создания"));
-            clHeaders.add(getCellData("(ʘʘ) 10 дней"));
-            clHeaders.add(getCellData("(ʘʘ) ср. 10 дней"));
+            clHeaders.add(getCellData("просм. 10 дней"));
+            clHeaders.add(getCellData("просм. ср. 10 дней"));
         }
 
 
