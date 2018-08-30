@@ -29,7 +29,7 @@ public class TaskManager {
         });
         system.addHandler(handler);
         system.setUseParentHandlers(false);
-//        System.setErr(null);
+        System.setErr(null);
         system.info("-------------------------------------------------");
         doTask();
     }
@@ -71,7 +71,6 @@ public class TaskManager {
                         updateQuery();
 
                         System.gc();
-                        ProxyManager.clear();
                     }
                     Thread.sleep(1000);
                 } catch (Exception e) {

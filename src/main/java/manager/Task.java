@@ -171,8 +171,6 @@ public class Task {
             itemInfo.clear();
 
             if (reportFilter.isDate()) {
-                RequestManager.closeClient();
-
                 log.info("-------------------------------------------------");
                 log.info("Выполняем запрос на выкачку страниц статистики");
                 for (Ad ad : result) {
@@ -182,12 +180,20 @@ public class Task {
                     reqTasks.add(new RequestTask(ad.getId(), url, ReqTaskType.STATS));
                 }
 
-                EventSocket.checkToken(token);
-                List<RequestTask> statsHtml = RequestManager.execute(token, reqTasks);
+                List<StatInfo> statInfo = new ArrayList<>();
+                do {
+                    EventSocket.checkToken(token);
+
+                    RequestManager.closeClient();
+                    List<RequestTask> statsHtml = RequestManager.execute(token, new ArrayList<>(reqTasks));
+
+                    statInfo.addAll(AvitoParser.parseStats(statsHtml));
+                    reqTasks.removeIf(t -> statsHtml.stream().anyMatch(s -> s.getId().equals(t.getId())));
+                    statsHtml.clear();
+                } while (reqTasks.size() > 100);
                 reqTasks.clear();
 
-                List<StatInfo> statInfo = AvitoParser.parseStats(statsHtml);
-                statsHtml.clear();
+
 
                 log.info("-------------------------------------------------");
                 log.info("Дополняем результат, статистекой просмотров");

@@ -22,6 +22,10 @@ public class MainTest {
 
     public static void main(String[] args) throws IOException {
 
+
+        ProxyManager.getProxy();
+        System.exit(1);
+
         Logger system = Logger.getLogger("");
         Handler[] handlers = system.getHandlers();
         system.removeHandler(handlers[0]);
