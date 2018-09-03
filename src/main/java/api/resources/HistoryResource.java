@@ -14,11 +14,20 @@ public class HistoryResource {
     @GET
     @Path("stats")
     @Produces(MediaType.APPLICATION_JSON)
-    public String hello(@QueryParam("nick") String nick) {
+    public String hello(@QueryParam("page") String page,
+                        @QueryParam("pageSize") String pageSize,
+                        @QueryParam("nick") String nick,
+                        @QueryParam("orderBy") String orderBy) {
 
-        List<History> result = DBHandler.getHistoryByNick(nick);
+        try {
+            int numPage = Integer.parseInt(page);
+            int numPageSize = Integer.parseInt(pageSize);
 
-        JSONArray jsonObject = new JSONArray(result.toArray());
-        return jsonObject.toString();
+            List<History> result = DBHandler.getHistory(numPage, numPageSize, nick, orderBy);
+            JSONArray jsonObject = new JSONArray(result.toArray());
+            return jsonObject.toString();
+        } catch (Exception ignore) { ignore.printStackTrace();}
+
+        return "{}";
     }
 }

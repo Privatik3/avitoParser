@@ -1,6 +1,7 @@
 package manager;
 
 import api.History;
+import api.RecordType;
 import db.DBHandler;
 import google.ReportFilter;
 import google.SheetsExample;
@@ -17,6 +18,7 @@ import socket.EventSocket;
 import utility.RequestManager;
 
 import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -220,7 +222,12 @@ public class Task {
             // API
             log.info("-------------------------------------------------");
             log.info("Сохраняем историю запроса в базу");
-            DBHandler.saveHistory(new History(ip, token, title, result.size(), endTime, resultLink));
+
+            Date date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(title.substring(title.lastIndexOf("|") + 2));
+            History record = new History(
+                    ip, token, result.size(), endTime, title.replaceAll("\\s\\|\\s\\d+-.*$", ""),
+                    resultLink, date, RecordType.GOOGLE_DOCS);
+            DBHandler.saveHistory(record);
             result.clear();
         } catch (Exception e) {
             log.log(Level.SEVERE, "Ошибка во время парсинга");

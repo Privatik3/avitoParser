@@ -29,7 +29,7 @@ public class TaskManager {
         });
         system.addHandler(handler);
         system.setUseParentHandlers(false);
-        System.setErr(null);
+//        System.setErr(null);
         system.info("-------------------------------------------------");
         doTask();
     }

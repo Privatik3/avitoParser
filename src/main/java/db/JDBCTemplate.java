@@ -1,10 +1,13 @@
 package db;
 
 import api.History;
+import api.RecordType;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import javax.sql.DataSource;
+import java.sql.Date;
+import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -22,27 +25,30 @@ public class JDBCTemplate {
     }
 
     public void createHistoryRecord(History record) {
-            String SQL =
-                    "INSERT into history (ip, nick, title, report, result_count, time) " +
-                            "VALUES (:ip, :nick, :title, :report, :result_count, :time);";
+        String SQL =
+                "INSERT into history (ip, nick, result_count, time, title, report, date, type) " +
+                        "VALUES (:ip, :nick, :result_count, :time, :title, :report, :date, :type);";
 
-            MapSqlParameterSource parameter = new MapSqlParameterSource();
-            parameter.addValue("ip", record.getIp());
-            parameter.addValue("nick", record.getNick());
-            parameter.addValue("title", record.getTitle());
-            parameter.addValue("report", record.getUrl());
-            parameter.addValue("result_count", record.getResultCount());
-            parameter.addValue("time", record.getTime());
+        MapSqlParameterSource parameter = new MapSqlParameterSource();
+        parameter.addValue("ip", record.getIp());
+        parameter.addValue("nick", record.getNick());
+        parameter.addValue("result_count", record.getResultCount());
+        parameter.addValue("time", record.getTime());
+        parameter.addValue("title", record.getTitle());
+        parameter.addValue("report", record.getUrl());
+        parameter.addValue("date", record.getDate());
+        parameter.addValue("type", record.getType().toString());
 
-            jdbcTemplateObject.update(SQL, parameter);
+        jdbcTemplateObject.update(SQL, parameter);
     }
 
-    public List<History> getHistory(String nick) {
+    public List<History> getHistory(int page, int pageSize, String nick, String orderBy) {
 
         try {
             String SQL =
                     "SELECT * FROM history" + (nick.equals("admin") ? "" : " WHERE nick = :nick") +
-                            " ORDER BY `id` DESC limit 0, 100";
+                            (orderBy.isEmpty() ? " ORDER BY `id` DESC " : (" ORDER BY " + orderBy)) +
+                            String.format(" LIMIT %d OFFSET %d", pageSize, page * pageSize );
 
             MapSqlParameterSource parameters = new MapSqlParameterSource();
             parameters.addValue("nick", nick);
@@ -51,14 +57,16 @@ public class JDBCTemplate {
                 History record = new History();
                 record.setIp(rs.getString("ip"));
                 record.setNick(rs.getString("nick"));
-                record.setTitle(rs.getString("title"));
-                record.setUrl(rs.getString("report"));
                 record.setResultCount(rs.getInt("result_count"));
                 record.setTime(rs.getInt("time"));
+                record.setTitle(rs.getString("title"));
+                record.setUrl(rs.getString("report"));
+                record.setDate(rs.getTimestamp("date"));
+                record.setType(RecordType.getType(rs.getString("type")));
 
                 return record;
             });
-        } catch (Exception ignored) { }
+        } catch (Exception ignored) {}
 
         return new ArrayList<>();
     }

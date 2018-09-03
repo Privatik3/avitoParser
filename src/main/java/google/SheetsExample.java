@@ -29,8 +29,7 @@ import com.google.api.services.sheets.v4.SheetsScopes;
 import com.google.api.services.sheets.v4.model.*;
 import parser.Ad;
 
-import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Level;
@@ -293,12 +292,12 @@ public class SheetsExample {
 
             // -------------------- SORTS SHEETS --------------------
             sheets.add(getSortSheet("Цены (сорт)", "=SORT('Объявления'!A2:R20000,2,FALSE)", filters));
-            sheets.add(getSortSheet("(ʘʘ) Всего", "=SORT('Объявления'!A2:R20000;3;FALSE)", filters));
+            sheets.add(getSortSheet("Просм. Всего", "=SORT('Объявления'!A2:R20000;3;FALSE)", filters));
             sheets.add(getSortSheet("Методы (сорт)", "=SORT('Объявления'!A2:R20000;5;FALSE)", filters));
-            sheets.add(getSortSheet("(ʘʘ) За день", "=SORT('Объявления'!A2:R20000;4;FALSE)", filters));
+            sheets.add(getSortSheet("Просм. За день", "=SORT('Объявления'!A2:R20000;4;FALSE)", filters));
             if (filters.isDate()) {
-                sheets.add(getSortSheet("(ʘʘ) 10 дней", "=SORT('Объявления'!A2:R20000;17;FALSE)", filters));
-                sheets.add(getSortSheet("(ʘʘ) ср. 10 дней", "=SORT('Объявления'!A2:R20000;18;FALSE)", filters));
+                sheets.add(getSortSheet("Просм. 10 дней", "=SORT('Объявления'!A2:R20000;17;FALSE)", filters));
+                sheets.add(getSortSheet("Просм. ср. 10 дней", "=SORT('Объявления'!A2:R20000;18;FALSE)", filters));
             }
 
 
@@ -493,8 +492,8 @@ public class SheetsExample {
 
         clHeaders.add(getCellData("Заголовок"));
         clHeaders.add(getCellData("Цена"));
-        clHeaders.add(getCellData("просм. Всего"));
-        clHeaders.add(getCellData("просм. За день"));
+        clHeaders.add(getCellData("Просм. Всего"));
+        clHeaders.add(getCellData("Просм. За день"));
         clHeaders.add(getCellData("Методы продвижения"));
         clHeaders.add(getCellData("Адрес"));
         clHeaders.add(getCellData("Дата"));
@@ -520,8 +519,8 @@ public class SheetsExample {
         }
         if (filters.isDate()) {
             clHeaders.add(getCellData("Дата Создания"));
-            clHeaders.add(getCellData("просм. 10 дней"));
-            clHeaders.add(getCellData("просм. ср. 10 дней"));
+            clHeaders.add(getCellData("Просм. 10 дней"));
+            clHeaders.add(getCellData("Просм. ср. 10 дней"));
         }
 
 
@@ -587,6 +586,14 @@ public class SheetsExample {
                 });
 
         batch.execute();
+
+        /*ByteArrayOutputStream byteArrayOutputStream  = new ByteArrayOutputStream();
+        driveService.files().export(fileId, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                .executeMediaAndDownloadTo(byteArrayOutputStream );
+
+        try(OutputStream outputStream = new FileOutputStream("test.xlsx")) {
+            byteArrayOutputStream.writeTo(outputStream);
+        }*/
     }
 
     private static Drive createDriveService() throws IOException {

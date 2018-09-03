@@ -43,9 +43,9 @@ public class DBHandler {
             jdbcTemplate.createHistoryRecord(record);
     }
 
-    public static List<History> getHistoryByNick(String nick) {
+    public static List<History> getHistory(int page, int pageSize, String nick, String orderBy) {
         if (jdbcTemplate != null)
-            return jdbcTemplate.getHistory(nick);
+            return jdbcTemplate.getHistory(page, pageSize, nick, orderBy);
         else
             return new ArrayList<>();
     }

@@ -1,4 +1,5 @@
 import api.History;
+import api.RecordType;
 import db.DBHandler;
 import manager.TaskManager;
 import org.json.JSONObject;
@@ -11,6 +12,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -20,10 +22,29 @@ import java.util.logging.*;
 
 public class MainTest {
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, ParseException {
 
+        List<String> allLines = Files.readAllLines(Paths.get("history.csv"));
+        for (String line : allLines) {
+            String[] data = line.split(",");
 
-        ProxyManager.getProxy();
+            String ip = data[1].replace("\"", "");
+            String token = data[2].replace("\"", "");
+            String title = data[3].replace("\"", "");
+            Date date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(title.substring(title.lastIndexOf("|") + 2));
+            String resultLink = data[4].replace("\"", "");
+            if (resultLink.isEmpty()) continue;
+
+            int size = Integer.parseInt(data[5].replace("\"", ""));
+            int endTime = Integer.parseInt(data[6].replace("\"", ""));
+            RecordType type = RecordType.GOOGLE_DOCS;
+
+            History record = new History(
+                    ip, token, size, endTime, title.replaceAll("\\s\\|\\s\\d+-.*$", ""),
+                    resultLink, date, type);
+            DBHandler.saveHistory(record);
+        }
+
         System.exit(1);
 
         Logger system = Logger.getLogger("");
