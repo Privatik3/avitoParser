@@ -27,9 +27,17 @@ import com.google.api.services.drive.model.Permission;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.SheetsScopes;
 import com.google.api.services.sheets.v4.model.*;
+import org.apache.poi.hssf.usermodel.HSSFSheet;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.apache.poi.xssf.usermodel.XSSFCell;
+import org.apache.poi.xssf.usermodel.XSSFRow;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import parser.Ad;
 
 import java.io.*;
+import java.net.InetAddress;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Level;
@@ -58,7 +66,13 @@ public class SheetsExample {
         }
     }
 
-    public static String generateSheet(String title, List<Ad> ads, ReportFilter filters) throws IOException {
+    public static String generateSheet(String title, List<Ad> ads, ReportFilter filters) {
+
+        int descLength = 0;
+        for (Ad ad : ads)
+            descLength += ad.getText() == null ? 0 : ad.getText().length();
+
+        boolean offlineMod = descLength > 50;
 
         try {
             // 1. CREATE NEW SPREADSHEET
@@ -185,10 +199,13 @@ public class SheetsExample {
                 if (filters.isDescription()) {
                     String text = "";
                     try {
-                        text = ad.getText();
-                        text = text.trim();
-                    } catch (Exception ignore) {
-                    }
+                        if (offlineMod) {
+                            text = ad.getId();
+                        } else {
+                            text = ad.getText();
+                            text = text.trim();
+                        }
+                    } catch (Exception ignore) { }
                     clValues.add(getCellData(text.replace("\u00A0", " ").trim()));
                 }
 
@@ -281,7 +298,6 @@ public class SheetsExample {
 
                 rowVal.setValues(clValues);
                 rData.add(rowVal);
-
             }
             // -------------------- SET VALUES ( END ) --------------------
 
@@ -309,14 +325,18 @@ public class SheetsExample {
 
             Spreadsheet response = request.execute();
 
-            // TODO: Change code below to process the `response` object:
-            System.out.println(response.getSpreadsheetUrl());
-
             // 2. PUBLISH SPREADSHEAT VIA DRIVE API
             String fileId = response.getSpreadsheetId();
-            setPermission(fileId);
+            setPermission(fileId, offlineMod);
 
-            return response.getSpreadsheetUrl();
+            if (offlineMod) {
+                //updateDescTable(ads, fileId);
+
+                InetAddress localHost = InetAddress.getLocalHost();
+                return String.format("http://%s:8081/api/report.xlsx?fileID=%s", localHost.getHostAddress(), fileId);
+            }
+            else
+                return response.getSpreadsheetUrl();
         } catch (Exception e) {
             log.log(Level.SEVERE, "Не удалось сформировать отчёт");
             log.log(Level.SEVERE, "Exception: " + e.getMessage());
@@ -327,6 +347,40 @@ public class SheetsExample {
         }
 
        return "";
+    }
+
+    private static void updateDescTable(List<Ad> ads, String fileId) throws IOException {
+
+        XSSFWorkbook wb = new XSSFWorkbook( new FileInputStream("reports/" + fileId + ".xlsx") );
+
+        for (int sheetIndex = 0; sheetIndex < wb.getNumberOfSheets() - 1; sheetIndex++) {
+            XSSFSheet sheet = wb.getSheetAt(sheetIndex);
+
+            int descOffset = -1;
+            XSSFRow colNames = sheet.getRow(0);
+            for (int i = 0; i < colNames.getLastCellNum(); i++) {
+                XSSFCell cell = colNames.getCell(i);
+                String colName = cell.getRawValue();
+                if (colName.equals("Текст")) {
+                    descOffset = i;
+                    break;
+                }
+            }
+
+            if (descOffset == -1) continue;
+            for (Integer i = 0 ; i < sheet.getLastRowNum() ; i++) {
+                XSSFRow row = sheet.getRow(i);
+
+
+            }
+        }
+
+        String id = "";
+
+        Optional<Ad> desc = ads.stream().filter(ad -> ad.getId().equals(id)).findFirst();
+        if (desc.isPresent()) {
+
+        }
     }
 
     private static Sheet getStatisticSheet(List<Ad> ads) {
@@ -562,12 +616,8 @@ public class SheetsExample {
         return cell;
     }
 
-    private static void setPermission(String fileId) throws IOException {
+    private static void setPermission(String fileId, boolean offlineMod) throws IOException {
         BatchRequest batch = driveService.batch();
-        /*Permission userPermission = new Permission()
-                .setType("group")
-                .setRole("writer")
-                .setEmailAddress("olx-parser@googlegroups.com");*/
 
         Permission userPermission = new Permission()
                 .setType("anyone")
@@ -584,16 +634,17 @@ public class SheetsExample {
                     public void onFailure(GoogleJsonError googleJsonError, HttpHeaders httpHeaders) {
                     }
                 });
-
         batch.execute();
 
-        /*ByteArrayOutputStream byteArrayOutputStream  = new ByteArrayOutputStream();
-        driveService.files().export(fileId, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-                .executeMediaAndDownloadTo(byteArrayOutputStream );
+        if (offlineMod) {
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            driveService.files().export(fileId, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                    .executeMediaAndDownloadTo(byteArrayOutputStream);
 
-        try(OutputStream outputStream = new FileOutputStream("test.xlsx")) {
-            byteArrayOutputStream.writeTo(outputStream);
-        }*/
+            try (OutputStream outputStream = new FileOutputStream("reports/" + fileId + ".xlsx")) {
+                byteArrayOutputStream.writeTo(outputStream);
+            }
+        }
     }
 
     private static Drive createDriveService() throws IOException {

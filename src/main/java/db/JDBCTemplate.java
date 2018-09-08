@@ -1,6 +1,7 @@
 package db;
 
 import api.History;
+import api.HistoryStats;
 import api.RecordType;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -46,14 +47,11 @@ public class JDBCTemplate {
 
         try {
             String SQL =
-                    "SELECT * FROM history" + (nick.equals("admin") ? "" : " WHERE nick = :nick") +
+                    "SELECT * FROM history" + (nick.equals("admin") ? "" : (" WHERE nick = \'" + nick + "\'")) +
                             (orderBy.isEmpty() ? " ORDER BY `id` DESC " : (" ORDER BY " + orderBy)) +
-                            String.format(" LIMIT %d OFFSET %d", pageSize, page * pageSize );
+                            String.format(" LIMIT %d OFFSET %d", pageSize, page * pageSize);
 
-            MapSqlParameterSource parameters = new MapSqlParameterSource();
-            parameters.addValue("nick", nick);
-
-            return jdbcTemplateObject.query(SQL, parameters, (rs, rowNum) -> {
+            return jdbcTemplateObject.query(SQL, (rs, rowNum) -> {
                 History record = new History();
                 record.setIp(rs.getString("ip"));
                 record.setNick(rs.getString("nick"));
@@ -66,8 +64,35 @@ public class JDBCTemplate {
 
                 return record;
             });
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
 
         return new ArrayList<>();
+    }
+
+    public HistoryStats getHistoryStats(String nick) {
+
+        try {
+            String SQL = "SELECT Count(his.id) AS all_count, one.avg_ten_count, one.avg_ten_time, ten.avg_ten_count, ten.avg_ten_time FROM(SELECT Avg(h.result_count) AS avg_ten_count, Avg(h.TIME) AS avg_ten_time FROM history AS h WHERE h.DATE >= Now() - interval 10 day) AS ten, (SELECT Avg(h.result_count) AS avg_ten_count, Avg(h.TIME) AS avg_ten_time FROM history AS h WHERE h.DATE >= Now() - interval 5 day) AS one, (SELECT * FROM history AS h" + (nick.equals("admin") ? "" : (" WHERE h.nick = \'" + nick + "\'")) + ") AS his";
+
+            List<HistoryStats> all_count = jdbcTemplateObject.query(SQL, (rs, rowNum) -> {
+                HistoryStats record = new HistoryStats();
+                record.setAllCount(rs.getInt("all_count"));
+
+                record.setAvgOneCount(rs.getInt(2));
+                record.setAvgOneTime(rs.getInt(3));
+
+                record.setAvgTenCount(rs.getInt(4));
+                record.setAvgTenTime(rs.getInt(5));
+
+                return record;
+            });
+
+            return all_count.get(0);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return new HistoryStats();
     }
 }

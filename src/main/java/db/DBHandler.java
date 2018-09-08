@@ -1,21 +1,14 @@
 package db;
 
 import api.History;
+import api.HistoryStats;
 import com.mysql.cj.jdbc.MysqlDataSource;
-import manager.RequestTask;
-import org.jsoup.Jsoup;
-import org.jsoup.safety.Whitelist;
 
-import javax.sql.DataSource;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class DBHandler {
 
@@ -50,5 +43,10 @@ public class DBHandler {
             return new ArrayList<>();
     }
 
-
+    public static HistoryStats getHistoryStats(String nick) {
+        if (jdbcTemplate != null)
+            return jdbcTemplate.getHistoryStats(nick);
+        else
+            return new HistoryStats();
+    }
 }

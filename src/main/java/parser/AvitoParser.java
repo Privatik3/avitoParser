@@ -161,28 +161,28 @@ public class AvitoParser {
 
             String title = "";
             try {
-                title = ob.getJSONObject("item").getJSONObject("currentItem").getString("title");
+                title = ob.getJSONObject("item").getJSONObject("item").getString("title");
             } catch (Exception ignored) {
             }
             item.setTitle(title);
 
             String price = "";
             try {
-                price = ob.getJSONObject("item").getJSONObject("currentItem").getJSONObject("price").getString("value");
+                price = ob.getJSONObject("item").getJSONObject("item").getJSONObject("price").getString("value");
             } catch (Exception ignored) {
             }
             item.setPrice(price);
 
             int views = 0;
             try {
-                views = ob.getJSONObject("item").getJSONObject("currentItem").getJSONObject("stats").getJSONObject("views").getInt("total");
+                views = ob.getJSONObject("item").getJSONObject("item").getJSONObject("stats").getJSONObject("views").getInt("total");
             } catch (Exception ignored) {
             }
             item.setViews(String.valueOf(views));
 
             int dailyViews = 0;
             try {
-                dailyViews = ob.getJSONObject("item").getJSONObject("currentItem").getJSONObject("stats").getJSONObject("views").getInt("today");
+                dailyViews = ob.getJSONObject("item").getJSONObject("item").getJSONObject("stats").getJSONObject("views").getInt("today");
             } catch (Exception ignored) {
             }
             item.setDailyViews(String.valueOf(dailyViews));
@@ -190,15 +190,15 @@ public class AvitoParser {
             String address = "";
             try {
                 try {
-                    address = ob.getJSONObject("item").getJSONObject("currentItem").getString("address");
+                    address = ob.getJSONObject("item").getJSONObject("item").getString("address");
                 } catch (Exception ignored) {}
 
                 if (address.isEmpty()) {
-                    JSONObject locations = ob.getJSONObject("item").getJSONObject("currentItem").getJSONObject("refs").getJSONObject("locations");
+                    JSONObject locations = ob.getJSONObject("item").getJSONObject("item").getJSONObject("refs").getJSONObject("locations");
                     for (String key : locations.keySet())
                         address += locations.getJSONObject(key).getString("name") + ", ";
 
-                    JSONObject metro = ob.getJSONObject("item").getJSONObject("currentItem").getJSONObject("refs").getJSONObject("metro");
+                    JSONObject metro = ob.getJSONObject("item").getJSONObject("item").getJSONObject("refs").getJSONObject("metro");
                     for (String key : metro.keySet())
                         address += "м. " + metro.getJSONObject(key).getString("name") + ", ";
                 }
@@ -207,7 +207,7 @@ public class AvitoParser {
 
             String dataNew = "";
             try {
-                long data = ob.getJSONObject("item").getJSONObject("currentItem").getLong("time");
+                long data = ob.getJSONObject("item").getJSONObject("item").getLong("time");
                 dataNew = new SimpleDateFormat("yyyy.MM.dd HH:mm").format(new Date(data * 1000L));
             } catch (Exception ignored) {
             }
@@ -215,7 +215,7 @@ public class AvitoParser {
 
             String numberPictures = "0";
             try {
-                numberPictures = String.valueOf(ob.getJSONObject("item").getJSONObject("currentItem").getJSONArray("images").length());
+                numberPictures = String.valueOf(ob.getJSONObject("item").getJSONObject("item").getJSONArray("images").length());
             } catch (Exception ignored) {
             }
             item.setNumberPictures(numberPictures);
@@ -223,7 +223,7 @@ public class AvitoParser {
             String description = "";
             String quantityText = "0";
             try {
-                description = ob.getJSONObject("item").getJSONObject("currentItem").getString("description").replaceAll("\n", " ");
+                description = ob.getJSONObject("item").getJSONObject("item").getString("description").replaceAll("\n", " ");
                 quantityText = String.valueOf(description.length());
                 description = description.trim();
             } catch (Exception ignored) {
@@ -233,21 +233,21 @@ public class AvitoParser {
 
             String seller = "";
             try {
-                seller = ob.getJSONObject("item").getJSONObject("currentItem").getJSONObject("seller").getString("name");
+                seller = ob.getJSONObject("item").getJSONObject("item").getJSONObject("seller").getString("name");
             } catch (Exception ignored) {
             }
             item.setSeller(seller);
 
             int sellerId = 0;
             try {
-                sellerId = ob.getJSONObject("item").getJSONObject("currentItem").getInt("id");
+                sellerId = ob.getJSONObject("item").getJSONObject("item").getInt("id");
             } catch (Exception ignored) {
             }
             item.setSellerId(String.valueOf(sellerId));
 
             String phone = "";
             try {
-                JSONObject contactList = ob.getJSONObject("item").getJSONObject("currentItem").getJSONObject("contacts").getJSONArray("list").getJSONObject(0);
+                JSONObject contactList = ob.getJSONObject("item").getJSONObject("item").getJSONObject("contacts").getJSONArray("list").getJSONObject(0);
                 phone = contactList.getJSONObject("value").getString("uri");
                 phone = URLDecoder.decode(phone.substring(phone.lastIndexOf("=") + 1));
             } catch (Exception ignored) {

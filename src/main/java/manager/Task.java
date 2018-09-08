@@ -217,6 +217,7 @@ public class Task {
             RequestManager.closeClient();
 
             this.resultLink = SheetsExample.generateSheet(title, result, reportFilter);
+            System.out.println(resultLink);
             EventSocket.sendResult(this);
 
             // API

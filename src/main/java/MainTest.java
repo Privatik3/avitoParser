@@ -1,4 +1,5 @@
 import api.History;
+import api.HistoryStats;
 import api.RecordType;
 import db.DBHandler;
 import manager.TaskManager;
@@ -24,9 +25,12 @@ public class MainTest {
 
     public static void main(String[] args) throws IOException, ParseException {
 
+        HistoryStats xiiiangel = DBHandler.getHistoryStats("admin");
+        System.exit(1);
+
         List<String> allLines = Files.readAllLines(Paths.get("history.csv"));
         for (String line : allLines) {
-            String[] data = line.split(",");
+            String[] data = line.split(";");
 
             String ip = data[1].replace("\"", "");
             String token = data[2].replace("\"", "");
@@ -36,6 +40,8 @@ public class MainTest {
             if (resultLink.isEmpty()) continue;
 
             int size = Integer.parseInt(data[5].replace("\"", ""));
+            if(size == 0) continue;
+
             int endTime = Integer.parseInt(data[6].replace("\"", ""));
             RecordType type = RecordType.GOOGLE_DOCS;
 
