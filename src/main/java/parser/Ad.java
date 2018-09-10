@@ -30,6 +30,8 @@ public class Ad {
     private String dateApplication;
     private String viewsTenDay;
     private String viewsAverageTenDay;
+    private Integer maxTenDay;
+    private String maxTenDate;
 
 
 
@@ -43,6 +45,26 @@ public class Ad {
         this.isVip = info.getVip();
         this.isUrgent = info.getUrgent();
         this.isUpped = info.getUpped();
+    }
+
+    public Boolean getHasStats() {
+        return hasStats;
+    }
+
+    public Integer getMaxTenDay() {
+        return maxTenDay;
+    }
+
+    public void setMaxTenDay(Integer maxTenDay) {
+        this.maxTenDay = maxTenDay;
+    }
+
+    public String getMaxTenDate() {
+        return maxTenDate;
+    }
+
+    public void setMaxTenDate(String maxTenDate) {
+        this.maxTenDate = maxTenDate;
     }
 
     public Boolean hasStats() {
@@ -266,6 +288,8 @@ public class Ad {
         this.dateApplication = info.getDateApplication();
         this.viewsTenDay= info.getViewsTenDay();
         this.viewsAverageTenDay= info.getViewsAverageTenDay();
+        this.maxTenDay = info.getMaxTenDay();
+        this.maxTenDate = info.getMaxTenDate();
     }
 
     @Override

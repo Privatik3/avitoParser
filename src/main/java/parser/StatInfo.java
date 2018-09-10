@@ -6,6 +6,24 @@ public class StatInfo {
     private String dateApplication;
     private String viewsTenDay;
     private String viewsAverageTenDay;
+    private Integer maxTenDay;
+    private String maxTenDate;
+
+    public Integer getMaxTenDay() {
+        return maxTenDay;
+    }
+
+    public void setMaxTenDay(Integer maxTenDay) {
+        this.maxTenDay = maxTenDay;
+    }
+
+    public String getMaxTenDate() {
+        return maxTenDate;
+    }
+
+    public void setMaxTenDate(String maxTenDate) {
+        this.maxTenDate = maxTenDate;
+    }
 
     public String getDateApplication() {
         return dateApplication;

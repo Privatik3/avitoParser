@@ -344,16 +344,26 @@ public class AvitoParser {
 
             int viewsTenDayArray = 0;
             String viewsTenDay = "0";
+            int maxTenDayInt = 0;
+            String maxTenDate = "0";
             try {
                 int viewsTenDayArrayNew = chart.getJSONArray("columns").getJSONArray(1).length() - 1;
                 int viewsTenDayArrayTest = viewsTenDayArrayNew;
+                Integer timeData = 0;
                 for (int x = 0; (viewsTenDayArrayNew > 10) ? x <= 10 : x <= (viewsTenDayArrayNew - 1); x++) {
                     int viewsTenDayTest = chart.getJSONArray("columns").getJSONArray(1).getInt(viewsTenDayArrayTest--);
                     viewsTenDayArray = viewsTenDayArray + viewsTenDayTest;
+                    if (maxTenDayInt < viewsTenDayTest) {
+                        maxTenDayInt = viewsTenDayTest;
+                            maxTenDate = new SimpleDateFormat("yyyy.MM.dd").format((new Date().getTime() - timeData));
+                    }
+                    timeData = timeData + 86400000;
                 }
                 viewsTenDay = String.valueOf((viewsTenDayArrayNew > 10) ? viewsTenDayArray / 10 : viewsTenDayArray / viewsTenDayArrayNew);
             } catch (Exception ignored) {
             }
+            item.setMaxTenDay(maxTenDayInt);
+            item.setMaxTenDate(maxTenDate);
             item.setViewsTenDay(String.valueOf(viewsTenDayArray));
             item.setViewsAverageTenDay(viewsTenDay);
 
