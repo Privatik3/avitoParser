@@ -227,7 +227,7 @@ public class Task {
             Date date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(title.substring(title.lastIndexOf("|") + 2));
             History record = new History(
                     ip, token, result.size(), endTime, title.replaceAll("\\s\\|\\s\\d+-.*$", ""),
-                    resultLink, date, RecordType.GOOGLE_DOCS);
+                    resultLink, date, resultLink.contains("report") ? RecordType.EXCEL : RecordType.GOOGLE_DOCS);
             DBHandler.saveHistory(record);
             result.clear();
         } catch (Exception e) {

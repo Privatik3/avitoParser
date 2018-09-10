@@ -30,10 +30,8 @@ import com.google.api.services.sheets.v4.model.*;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
-import org.apache.poi.xssf.usermodel.XSSFCell;
-import org.apache.poi.xssf.usermodel.XSSFRow;
-import org.apache.poi.xssf.usermodel.XSSFSheet;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.xssf.usermodel.*;
 import parser.Ad;
 
 import java.io.*;
@@ -330,7 +328,7 @@ public class SheetsExample {
             setPermission(fileId, offlineMod);
 
             if (offlineMod) {
-                //updateDescTable(ads, fileId);
+                updateDescTable(ads, fileId);
 
                 InetAddress localHost = InetAddress.getLocalHost();
                 return String.format("http://%s:8081/api/report.xlsx?fileID=%s", localHost.getHostAddress(), fileId);
@@ -349,38 +347,94 @@ public class SheetsExample {
        return "";
     }
 
-    private static void updateDescTable(List<Ad> ads, String fileId) throws IOException {
+    public static void updateDescTable(List<Ad> ads, String fileId) throws IOException {
 
         XSSFWorkbook wb = new XSSFWorkbook( new FileInputStream("reports/" + fileId + ".xlsx") );
 
-        for (int sheetIndex = 0; sheetIndex < wb.getNumberOfSheets() - 1; sheetIndex++) {
-            XSSFSheet sheet = wb.getSheetAt(sheetIndex);
+        int descOffset = -1;
+        XSSFRow colNames = wb.getSheetAt(0).getRow(0);
+        for (int i = 0; i < colNames.getLastCellNum(); i++) {
+            XSSFCell cell = colNames.getCell(i);
+            String colName = cell.getStringCellValue();
+            if (colName.equals("Текст")) {
+                descOffset = i;
+                break;
+            }
+        }
 
-            int descOffset = -1;
-            XSSFRow colNames = sheet.getRow(0);
-            for (int i = 0; i < colNames.getLastCellNum(); i++) {
-                XSSFCell cell = colNames.getCell(i);
-                String colName = cell.getRawValue();
-                if (colName.equals("Текст")) {
-                    descOffset = i;
-                    break;
-                }
+        List<XSSFCell[]> rows = new ArrayList<>(wb.getSheetAt(0).getLastRowNum());
+        for (int sheetIndex = 0; sheetIndex < wb.getNumberOfSheets() - 1; sheetIndex++) {
+
+            XSSFSheet sheet = wb.getSheetAt(sheetIndex);
+            if (sheetIndex != 0) {
+                XSSFCell cell = sheet.getRow(1).getCell(0);
+                int sortedCol = Integer.parseInt(cell.getCellFormula().split(",")[1]) - 1;
+                sheet.removeArrayFormula(cell);
+
+                System.out.println(sheetIndex);
+                rows.sort((o1, o2) -> {
+                    XSSFCell fCell = o1[sortedCol];
+                    XSSFCell sCell = o2[sortedCol];
+
+                    if (fCell.getCellTypeEnum() != sCell.getCellTypeEnum())
+                        return fCell.getCellTypeEnum() == CellType.STRING ? -1 : 1;
+
+                    switch (fCell.getCellTypeEnum()) {
+                        case STRING:
+                            return (fCell.getStringCellValue().compareTo(sCell.getStringCellValue()) * -1);
+                        case NUMERIC:
+                            return Double.compare(sCell.getNumericCellValue(), fCell.getNumericCellValue());
+                        default:
+                            return 0;
+                    }
+                });
             }
 
-            if (descOffset == -1) continue;
-            for (Integer i = 0 ; i < sheet.getLastRowNum() ; i++) {
+            for (Integer i = 1 ; i < wb.getSheetAt(0).getLastRowNum() ; i++) {
                 XSSFRow row = sheet.getRow(i);
 
+                if (sheetIndex == 0) {
+                    XSSFCell[] data = new XSSFCell[colNames.getLastCellNum()];
+                    for (int j = 0; j < row.getLastCellNum(); j++) {
+                        XSSFCell cell = row.getCell(j);
 
+                        if (descOffset == j) {
+                            String id = cell.getStringCellValue();
+
+                            Optional<Ad> findAd = ads.stream().filter(ad -> ad.getId().equals(id)).findFirst();
+                            String desc = findAd.isPresent() ? findAd.get().getText() : "";
+
+                            row.getCell(descOffset).setCellValue(desc.replace("\u00A0", " ").trim());
+                        }
+                        data[j] = row.getCell(j);
+                    }
+                    rows.add(data);
+                } else {
+                    for (int j = 0; j < colNames.getLastCellNum(); j++) {
+                        XSSFCell cacheCell = rows.get(i - 1)[j];
+                        XSSFCell cell = row.createCell(j);
+
+                        if (cacheCell == null)
+                            continue;
+
+//                        cell.setCellStyle(cacheCell.getCellStyle());
+                        switch (cacheCell.getCellTypeEnum()) {
+                            case STRING:
+                                cell.setCellValue(cacheCell.getStringCellValue());
+                                break;
+                            case NUMERIC:
+                                cell.setCellValue(cacheCell.getNumericCellValue());
+                                break;
+                        }
+                    }
+                }
             }
         }
 
-        String id = "";
-
-        Optional<Ad> desc = ads.stream().filter(ad -> ad.getId().equals(id)).findFirst();
-        if (desc.isPresent()) {
-
-        }
+        FileOutputStream outputStream = new FileOutputStream("reports/" + fileId + ".xlsx");
+//        FileOutputStream outputStream = new FileOutputStream("reports/out.xlsx");
+        wb.write(outputStream);
+        wb.close();
     }
 
     private static Sheet getStatisticSheet(List<Ad> ads) {
