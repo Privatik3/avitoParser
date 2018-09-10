@@ -271,6 +271,20 @@ public class SheetsExample {
                         }
 
                         try {
+                            Integer maxTenDay = ad.getMaxTenDay();
+                            clValues.add(getCellData(maxTenDay));
+                        } catch (Exception ignore) {
+                            clValues.add(getCellData(0));
+                        }
+
+                        try {
+                            String maxTenDate = ad.getMaxTenDate();
+                                clValues.add(getCellData(maxTenDate));
+                        } catch (Exception ignore) {
+                            clValues.add(getCellData(0));
+                        }
+
+                        try {
                             String viewsAverageTenDay = ad.getViewsAverageTenDay();
                             clValues.add(getCellData(Integer.parseInt(viewsAverageTenDay)));
                         } catch (Exception ignore) {
@@ -291,6 +305,14 @@ public class SheetsExample {
                         } catch (Exception e) {
                             clValues.add(getCellData(0));
                         }
+
+                        clValues.add(getCellData(new SimpleDateFormat("yyyy.MM.dd").format(new Date())));
+
+                        try {
+                            clValues.add(getCellData(Integer.parseInt(ad.getViews())));
+                        } catch (Exception ignore) {
+                            clValues.add(getCellData(0));
+                        }
                     }
                 }
 
@@ -305,13 +327,14 @@ public class SheetsExample {
             // -------------------- MAIN SHEET ( END ) --------------------
 
             // -------------------- SORTS SHEETS --------------------
-            sheets.add(getSortSheet("Цены (сорт)", "=SORT('Объявления'!A2:R20000,2,FALSE)", filters));
-            sheets.add(getSortSheet("Просм. Всего", "=SORT('Объявления'!A2:R20000;3;FALSE)", filters));
-            sheets.add(getSortSheet("Методы (сорт)", "=SORT('Объявления'!A2:R20000;5;FALSE)", filters));
-            sheets.add(getSortSheet("Просм. За день", "=SORT('Объявления'!A2:R20000;4;FALSE)", filters));
+            sheets.add(getSortSheet("Цены (сорт)", "=SORT('Объявления'!A2:U20000,2,FALSE)", filters));
+            sheets.add(getSortSheet("Просм. Всего", "=SORT('Объявления'!A2:U20000;3;FALSE)", filters));
+            sheets.add(getSortSheet("Методы (сорт)", "=SORT('Объявления'!A2:U20000;5;FALSE)", filters));
+            sheets.add(getSortSheet("Просм. За день", "=SORT('Объявления'!A2:U20000;4;FALSE)", filters));
             if (filters.isDate()) {
-                sheets.add(getSortSheet("Просм. 10 дней", "=SORT('Объявления'!A2:R20000;17;FALSE)", filters));
-                sheets.add(getSortSheet("Просм. ср. 10 дней", "=SORT('Объявления'!A2:R20000;18;FALSE)", filters));
+                sheets.add(getSortSheet("Просм. 10 дней", "=SORT('Объявления'!A2:U20000;17;FALSE)", filters));
+                sheets.add(getSortSheet("max. Просм. 10дн.", "=SORT('Объявления'!A2:U20000;18;FALSE)", filters));
+                sheets.add(getSortSheet("Просм. ср. 10 дней", "=SORT('Объявления'!A2:U20000;20;FALSE)", filters));
             }
 
 
@@ -628,6 +651,8 @@ public class SheetsExample {
         if (filters.isDate()) {
             clHeaders.add(getCellData("Дата Создания"));
             clHeaders.add(getCellData("Просм. 10 дней"));
+            clHeaders.add(getCellData("max. Просм. 10дн."));
+            clHeaders.add(getCellData("Дата. max. Просм."));
             clHeaders.add(getCellData("Просм. ср. 10 дней"));
         }
 
