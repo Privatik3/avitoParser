@@ -1,7 +1,13 @@
 package manager;
 
+import api.DelayTask;
 import api.History;
 import api.RecordType;
+import com.pengrad.telegrambot.TelegramBot;
+import com.pengrad.telegrambot.model.request.ForceReply;
+import com.pengrad.telegrambot.model.request.ParseMode;
+import com.pengrad.telegrambot.request.SendMessage;
+import com.pengrad.telegrambot.response.SendResponse;
 import db.DBHandler;
 import google.ReportFilter;
 import google.SheetsExample;
@@ -26,6 +32,10 @@ import java.util.logging.Logger;
 public class Task {
 
     private static Logger log = Logger.getLogger("");
+    private static TelegramBot bot = new TelegramBot("695944699:AAH05Jq2kZW7ysYoZBqtrJ_DGd6_--kdP90");
+
+    private String id;
+    private Type type;
 
     private String token;
     private String title = "";
@@ -35,9 +45,13 @@ public class Task {
     private ArrayList<RequestTask> reqTasks;
     private List<Ad> result = new ArrayList<>();
     private ReportFilter reportFilter;
+    private HashMap<String, ArrayList<String>> params;
 
-    public Task(String token, HashMap<String, ArrayList<String>> params) throws Exception {
+    public Task(String id, String token, HashMap<String, ArrayList<String>> params, Type type) throws Exception {
+        this.id = id;
         this.token = token;
+        this.params = new HashMap<>(params);
+        this.type = type;
 
         if (params.containsKey("ip")) {
             ip = params.get("ip").get(0).toLowerCase();
@@ -136,10 +150,11 @@ public class Task {
     public void start() throws Exception {
         long startTime = new Date().getTime();
         try {
-            EventSocket.checkToken(token);
+            if (type == Type.REGULAR)
+                EventSocket.checkToken(token);
 
             log.info("Выполняем запрос на выкачку страниц каталога");
-            List<RequestTask> pagesHtml = RequestManager.execute(token, reqTasks);
+            List<RequestTask> pagesHtml = RequestManager.execute(token, reqTasks, type);
             reqTasks.clear();
 
             List<PageInfo> pageInfo = AvitoParser.parsePages(pagesHtml);
@@ -153,10 +168,12 @@ public class Task {
             }
             pageInfo.clear();
 
-            EventSocket.checkToken(token);
+            if (type == Type.REGULAR)
+                EventSocket.checkToken(token);
+
             log.info("-------------------------------------------------");
             log.info("Выполняем запрос на выкачку страниц обьявлений");
-            List<RequestTask> itemsHtml = RequestManager.execute(token, reqTasks);
+            List<RequestTask> itemsHtml = RequestManager.execute(token, reqTasks, type);
             reqTasks.clear();
 
             List<ItemInfo> itemInfo = AvitoParser.parseItems(itemsHtml);
@@ -184,10 +201,11 @@ public class Task {
 
                 List<StatInfo> statInfo = new ArrayList<>();
                 do {
-                    EventSocket.checkToken(token);
+                    if (type == Type.REGULAR)
+                        EventSocket.checkToken(token);
 
                     RequestManager.closeClient();
-                    List<RequestTask> statsHtml = RequestManager.execute(token, new ArrayList<>(reqTasks));
+                    List<RequestTask> statsHtml = RequestManager.execute(token, new ArrayList<>(reqTasks), type);
 
                     statInfo.addAll(AvitoParser.parseStats(statsHtml));
                     reqTasks.removeIf(t -> statsHtml.stream().anyMatch(s -> s.getId().equals(t.getId())));
@@ -208,17 +226,32 @@ public class Task {
                 statInfo.clear();
             }
 
+            log.info("-------------------------------------------------");
+            log.info("Чистим отчёт от мусора");
+            Iterator<Ad> adIter = result.iterator();
+            while (adIter.hasNext()) {
+                Ad ad = adIter.next();
+                try {
+                    if (ad.getTitle().isEmpty() || ad.getText().isEmpty())
+                        adIter.remove();
+                } catch (NullPointerException e) { adIter.remove(); }
+            }
+
             int endTime = (int) (new Date().getTime() - (startTime));
             log.info("-------------------------------------------------");
             log.info("ПОЛНОЕ ВРЕМЯ ВЫПОЛНЕНИЯ: " + endTime + " ms");
             log.info("-------------------------------------------------");
 
-            EventSocket.checkToken(token);
+            if (type == Type.REGULAR)
+                EventSocket.checkToken(token);
+
             RequestManager.closeClient();
 
             this.resultLink = SheetsExample.generateSheet(title, result, reportFilter);
             System.out.println(resultLink);
-            EventSocket.sendResult(this);
+
+            if (type == Task.Type.REGULAR)
+                EventSocket.sendResult(this);
 
             // API
             log.info("-------------------------------------------------");
@@ -231,11 +264,40 @@ public class Task {
             DBHandler.saveHistory(record);
             result.clear();
         } catch (Exception e) {
-            log.log(Level.SEVERE, "Ошибка во время парсинга");
-            log.log(Level.SEVERE, "Exception: " + e.getMessage());
-            e.printStackTrace();
+            String errorMessage = "Ошибка во время парсинга\n" +
+                            "Exception: " + e.getMessage();
+            log.log(Level.SEVERE, errorMessage);
+
+            if (!e.getMessage().equals("Не удалось сформировать отчёт"))
+                e.printStackTrace();
+
+            sendTelegramReport(errorMessage);
             throw new Exception("Ошибка во время парсинга");
         }
+    }
+
+    private void sendTelegramReport(String errorMessage) {
+
+        errorMessage +=
+                "\nПользователь: " + token +
+                "\nЗапрос: " + title.replaceAll("\\s\\|\\s\\d+-.*$", "") +
+                "\n=======================================\nПараметры запроса:\n";
+
+        params.remove("title");
+        params.remove("ip");
+        for (HashMap.Entry<String, ArrayList<String>> param : params.entrySet()) {
+            errorMessage += "    *" + param.getKey() + ": " + param.getValue().get(0) + "\n";
+        }
+
+        SendMessage request = new SendMessage("-291311546", errorMessage)
+                .parseMode(ParseMode.HTML)
+                .disableWebPagePreview(true)
+                .disableNotification(true)
+                .replyToMessageId(1)
+                .replyMarkup(new ForceReply());
+
+
+        bot.execute(request);
     }
 
     private ArrayList<RequestTask> initTasks(HashMap<String, ArrayList<String>> params) throws Exception {
@@ -304,5 +366,14 @@ public class Task {
         }
 
         return result;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public enum Type {
+        DELAY,
+        REGULAR
     }
 }

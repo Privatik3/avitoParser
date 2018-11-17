@@ -36,6 +36,8 @@ import parser.Ad;
 
 import java.io.*;
 import java.net.InetAddress;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Level;
@@ -64,13 +66,17 @@ public class SheetsExample {
         }
     }
 
-    public static String generateSheet(String title, List<Ad> ads, ReportFilter filters) {
+    public static String generateSheet(String title, List<Ad> ads, ReportFilter filters) throws Exception {
 
         int descLength = 0;
-        for (Ad ad : ads)
-            descLength += ad.getText() == null ? 0 : ad.getText().length();
 
-        boolean offlineMod = descLength > 50;
+        boolean offlineMod = false;
+        if (filters.isDescription()) {
+            for (Ad ad : ads)
+                descLength += ad.getText() == null ? 0 : ad.getText().length();
+
+            offlineMod = descLength > 3_000_000;
+        }
 
         try {
             // 1. CREATE NEW SPREADSHEET
@@ -113,6 +119,7 @@ public class SheetsExample {
                     titleName = ad.getTitle();
                 } catch (Exception ignore) {
                 }
+                if (titleName.isEmpty()) continue;
                 clValues.add(getCellData(titleName));
 
                 try {
@@ -203,7 +210,8 @@ public class SheetsExample {
                             text = ad.getText();
                             text = text.trim();
                         }
-                    } catch (Exception ignore) { }
+                    } catch (Exception ignore) {
+                    }
                     clValues.add(getCellData(text.replace("\u00A0", " ").trim()));
                 }
 
@@ -255,7 +263,7 @@ public class SheetsExample {
                 }
 
                 if (filters.isDate()) {
-                    if (ad.hasStats()) {
+                    if (ad.hasStats() != null && ad.hasStats()) {
                         String dateApplication = "";
                         try {
                             dateApplication = ad.getDateApplication();
@@ -279,7 +287,7 @@ public class SheetsExample {
 
                         try {
                             String maxTenDate = ad.getMaxTenDate();
-                                clValues.add(getCellData(maxTenDate));
+                            clValues.add(getCellData(maxTenDate));
                         } catch (Exception ignore) {
                             clValues.add(getCellData(0));
                         }
@@ -337,42 +345,95 @@ public class SheetsExample {
                 sheets.add(getSortSheet("Просм. ср. 10 дней", "=SORT('Объявления'!A2:U20000;20;FALSE)", filters));
             }
 
-
             // -------------------- STATISTIC SHEET --------------------
             sheets.add(getStatisticSheet(ads));
 
             requestBody.setSheets(sheets);
             Sheets.Spreadsheets.Create request = sheetsService.spreadsheets().create(requestBody);
 
-            Spreadsheet response = request.execute();
+            Spreadsheet response = null;
+            for (int i = 0; i < 3; i++) {
+                try {
+                    response = request.execute();
+                    break;
+                } catch (Exception e) {
+                    Thread.sleep(5000);
+                }
+            }
 
+            if (response == null) throw new Exception("Не удалось получить ответ от Google API");
             // 2. PUBLISH SPREADSHEAT VIA DRIVE API
             String fileId = response.getSpreadsheetId();
             setPermission(fileId, offlineMod);
 
             if (offlineMod) {
-                updateDescTable(ads, fileId);
+                updateDescTableNew(ads, fileId);
+//                updateDescTable(ads, fileId);
 
                 InetAddress localHost = InetAddress.getLocalHost();
-                return String.format("http://%s:8081/api/report.xlsx?fileID=%s", localHost.getHostAddress(), fileId);
-            }
-            else
+                title = title.replaceAll("\\s\\|\\s\\d+-.*$", "");
+                title = title.replaceAll("\\s\\|\\s", "_");
+                title = URLEncoder.encode(title, "UTF-8").replaceAll("\\+", "%20") + ".xslx";
+
+                return String.format("http://%s:8081/api/report/%s?fileID=%s", localHost.getHostAddress(), title, fileId);
+            } else
                 return response.getSpreadsheetUrl();
         } catch (Exception e) {
             log.log(Level.SEVERE, "Не удалось сформировать отчёт");
-            log.log(Level.SEVERE, "Exception: " + e.getMessage());
-            log.log(Level.SEVERE, "Method: " + e.getStackTrace()[0].getMethodName());
-            log.log(Level.SEVERE, "Line: " + e.getStackTrace()[0].getLineNumber());
-
             e.printStackTrace();
+            throw new Exception((e.getMessage().contains("Google API") ?
+                    "Не удалось получить ответ от Google API" :
+                    "Не удалось сформировать отчёт"));
+        }
+    }
+
+    @SuppressWarnings("Duplicates")
+    private static void updateDescTableNew(List<Ad> ads, String fileId) throws IOException {
+        XSSFWorkbook wb = new XSSFWorkbook(new FileInputStream("reports/" + fileId + ".xlsx"));
+        while (true) {
+            XSSFSheet sheet = wb.getSheetAt(1);
+            if (sheet.getSheetName().equals("Статистика"))
+                break;
+
+            wb.removeSheetAt(1);
         }
 
-       return "";
+        int descOffset = -1;
+        XSSFRow colNames = wb.getSheetAt(0).getRow(0);
+        for (int i = 0; i < colNames.getLastCellNum(); i++) {
+            String colName = colNames.getCell(i).getStringCellValue();
+            if (colName.equals("Текст")) {
+                descOffset = i;
+                break;
+            }
+        }
+
+        XSSFSheet sheet = wb.getSheetAt(0);
+        for (Integer i = 1; i < sheet.getLastRowNum(); i++) {
+            XSSFRow row = sheet.getRow(i);
+
+            for (int j = 0; j < row.getLastCellNum(); j++) {
+                XSSFCell cell = row.getCell(j);
+
+                if (descOffset == j) {
+                    String id = cell.getStringCellValue();
+
+                    Optional<Ad> findAd = ads.stream().filter(ad -> ad.getId().equals(id)).findFirst();
+                    String desc = findAd.isPresent() ? findAd.get().getText() : "";
+
+                    row.getCell(descOffset).setCellValue(desc.replace("\u00A0", " ").trim());
+                }
+            }
+        }
+
+        FileOutputStream outputStream = new FileOutputStream("reports/" + fileId + ".xlsx");
+        wb.write(outputStream);
+        wb.close();
     }
 
     public static void updateDescTable(List<Ad> ads, String fileId) throws IOException {
 
-        XSSFWorkbook wb = new XSSFWorkbook( new FileInputStream("reports/" + fileId + ".xlsx") );
+        XSSFWorkbook wb = new XSSFWorkbook(new FileInputStream("reports/" + fileId + ".xlsx"));
 
         int descOffset = -1;
         XSSFRow colNames = wb.getSheetAt(0).getRow(0);
@@ -396,24 +457,28 @@ public class SheetsExample {
 
                 System.out.println(sheetIndex);
                 rows.sort((o1, o2) -> {
-                    XSSFCell fCell = o1[sortedCol];
-                    XSSFCell sCell = o2[sortedCol];
+                    try {
+                        XSSFCell fCell = o1[sortedCol];
+                        XSSFCell sCell = o2[sortedCol];
 
-                    if (fCell.getCellTypeEnum() != sCell.getCellTypeEnum())
-                        return fCell.getCellTypeEnum() == CellType.STRING ? -1 : 1;
+                        if (fCell.getCellTypeEnum() != sCell.getCellTypeEnum())
+                            return fCell.getCellTypeEnum() == CellType.STRING ? -1 : 1;
 
-                    switch (fCell.getCellTypeEnum()) {
-                        case STRING:
-                            return (fCell.getStringCellValue().compareTo(sCell.getStringCellValue()) * -1);
-                        case NUMERIC:
-                            return Double.compare(sCell.getNumericCellValue(), fCell.getNumericCellValue());
-                        default:
-                            return 0;
+                        switch (fCell.getCellTypeEnum()) {
+                            case STRING:
+                                return (fCell.getStringCellValue().compareTo(sCell.getStringCellValue()) * -1);
+                            case NUMERIC:
+                                return Double.compare(sCell.getNumericCellValue(), fCell.getNumericCellValue());
+                            default:
+                                return 0;
+                        }
+                    } catch (Exception e) {
+                        return 0;
                     }
                 });
             }
 
-            for (Integer i = 1 ; i < wb.getSheetAt(0).getLastRowNum() ; i++) {
+            for (Integer i = 1; i < wb.getSheetAt(0).getLastRowNum(); i++) {
                 XSSFRow row = sheet.getRow(i);
 
                 if (sheetIndex == 0) {
@@ -477,9 +542,9 @@ public class SheetsExample {
 
         // -------------------- SET VALUES --------------------
         rData.add(new RowData().setValues(Arrays.asList(
-            new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("Всего:")),
-            new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("Объявлений:")),
-            new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=СЧЁТЗ('Объявления'!A2:A20000)"))
+                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("Всего:")),
+                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("Объявлений:")),
+                new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=СЧЁТЗ('Объявления'!A2:A20000)"))
         )));
         rData.add(new RowData());
 

@@ -1,5 +1,7 @@
 package manager;
 
+import api.DelayTask;
+import db.DBHandler;
 import socket.EventSocket;
 import utility.ProxyManager;
 
@@ -37,7 +39,7 @@ public class TaskManager {
     public static void initTask(String token, HashMap<String, ArrayList<String>> params) {
 
         try {
-            Task task = new Task(token, params);
+            Task task = new Task("0", token, params, Task.Type.REGULAR);
             tasks.add(task);
         } catch (Exception e) {
             EventSocket.sendMessage(token, "{\"message\":\"error\",\"parameters\":[{\"name\":\"msg\",\"value\":\"" + e.getMessage() + "\"}]}");
@@ -71,8 +73,22 @@ public class TaskManager {
                         updateQuery();
 
                         System.gc();
+                    } else if (DBHandler.checkDelayTask()) {
+                        Task task = DBHandler.getFreeTask();
+                        if (task != null) {
+                            try {
+                                DBHandler.changeDelayTaskStatus(task.getId(), DelayTask.Status.PROCESSING);
+                                task.start();
+                                DBHandler.changeDelayTaskStatus(task.getId(), DelayTask.Status.COMPLETE);
+                                DBHandler.updateDelayTaskReport(task.getId(), task.getResultLink());
+                                DBHandler.removeDelayTaskParams(task.getId());
+                            } catch (Exception e) {
+                                DBHandler.changeDelayTaskStatus(task.getId(), DelayTask.Status.FAIL);
+                                DBHandler.removeDelayTaskParams(task.getId());
+                            }
+                        }
                     }
-                    Thread.sleep(1000);
+                    Thread.sleep(10 * 1000);
                 } catch (Exception e) {
                     EventSocket.sendMessage(token, "{\"message\":\"error\",\"parameters\":[{\"name\":\"msg\",\"value\":\"" + e.getMessage() + "\"}]}");
                     EventSocket.closeToken(token);

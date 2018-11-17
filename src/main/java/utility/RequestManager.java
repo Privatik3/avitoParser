@@ -50,17 +50,17 @@ public class RequestManager {
             client = FiberHttpClientBuilder.
                     create(cores * 2).
 //                    setUserAgent(USER_AGENT).
-                    setHostnameVerifier(SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER).
-                    setSSLContext(sslContext).
-                    setMaxConnPerRoute(2048).
-                    setMaxConnTotal(2048).build();
+        setHostnameVerifier(SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER).
+                            setSSLContext(sslContext).
+                            setMaxConnPerRoute(2048).
+                            setMaxConnTotal(2048).build();
         } catch (Exception e) {
             log.log(Level.SEVERE, "Не удалось инициализировать HTTP Client");
             log.log(Level.SEVERE, "Exception: " + e.getMessage());
         }
     }
 
-    public static List<RequestTask> execute(String token, ArrayList<RequestTask> tasks) throws Exception {
+    public static List<RequestTask> execute(String token, ArrayList<RequestTask> tasks, Task.Type taskTape) throws Exception {
 
         if (client == null)
             initClient();
@@ -83,6 +83,8 @@ public class RequestManager {
         Integer failCount = 0;
 
         while (tasks.size() > 0) {
+            if (taskTape == Task.Type.REGULAR)
+                EventSocket.checkToken(token);
 
             if (resultStatus == result.size())
                 failCount = failCount + 1;
@@ -171,8 +173,10 @@ public class RequestManager {
                 log.info("RESULT_SIZE: " + result.size());
                 int progress = (int) ((result.size() * 1.0 / initTaskSize) * 100);
                 log.info("SEND PROGRESS: " + progress);
-                EventSocket.sendMessage(token,
-                        "{\"message\":\"status\",\"parameters\":[{\"name\":\"complete\",\"value\":\"" + progress + "\"}]}");
+
+                if (taskTape == Task.Type.REGULAR)
+                    EventSocket.sendMessage(token,
+                            "{\"message\":\"status\",\"parameters\":[{\"name\":\"complete\",\"value\":\"" + progress + "\"}]}");
             }
         }
 
@@ -185,10 +189,12 @@ public class RequestManager {
         return new ArrayList<>(result);
     }
 
-    public static void closeClient() throws IOException {
-        if (client != null)
+    public static void closeClient() {
+        try {
             client.close();
-
-        client = null;
+        } catch (Exception ignored) {
+        } finally {
+            client = null;
+        }
     }
 }

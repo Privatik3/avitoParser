@@ -4,6 +4,7 @@ import manager.Task;
 import manager.TaskManager;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import utility.Utility;
 
 import javax.websocket.ClientEndpoint;
 import javax.websocket.CloseReason;
@@ -79,20 +80,7 @@ public class EventSocket {
 
         switch (message) {
             case "start": {
-                System.out.println("Получена команда к старту, ПАРАМЕТРЫ:");
-                JSONArray params = obj.getJSONArray("parameters");
-
-                HashMap<String, ArrayList<String>> param = new HashMap<>();
-                for (int i = 0; i < params.length(); i++) {
-                    String name = params.getJSONObject(i).getString("name");
-                    String value = params.getJSONObject(i).getString("value");
-
-                    if (!value.isEmpty())
-                        param.computeIfAbsent(name, k -> new ArrayList<>()).add(value);
-
-                    System.out.println("    *" + name + ": " + value);
-                }
-
+                HashMap<String, ArrayList<String>> param = Utility.parseTaskParams(json);
                 TaskManager.initTask(token, param);
             }
         }
@@ -115,6 +103,6 @@ public class EventSocket {
 
     public static void checkToken(String token) throws Exception {
         if (!allTokens.containsKey(token))
-            throw new Exception("Token not exist anymore");
+            throw new Exception("Пользователь прервал соединения");
     }
 }

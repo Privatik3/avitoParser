@@ -1,6 +1,13 @@
+import api.DelayTask;
 import api.History;
 import api.HistoryStats;
 import api.RecordType;
+import com.pengrad.telegrambot.TelegramBot;
+import com.pengrad.telegrambot.model.Message;
+import com.pengrad.telegrambot.model.request.ForceReply;
+import com.pengrad.telegrambot.model.request.ParseMode;
+import com.pengrad.telegrambot.request.SendMessage;
+import com.pengrad.telegrambot.response.SendResponse;
 import db.DBHandler;
 import manager.TaskManager;
 import org.json.JSONObject;
@@ -9,23 +16,37 @@ import utility.ProxyManager;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 import java.util.logging.*;
+import java.util.logging.Formatter;
 
 public class MainTest {
 
-    public static void main(String[] args) throws IOException, ParseException {
+    public static void main(String[] args) throws IOException, ParseException, InterruptedException {
 
-        HistoryStats xiiiangel = DBHandler.getHistoryStats("admin");
+
+        String token1 = "Test";
+
+        HashMap<String, ArrayList<String>> params = new HashMap<>();
+        params.put("category_id", new ArrayList<>(Collections.singleton("40")));
+        params.put("location_id", new ArrayList<>(Collections.singleton("621540")));
+        params.put("params[181]", new ArrayList<>(Collections.singleton("795")));
+        params.put("s", new ArrayList<>(Collections.singleton("101")));
+        params.put("max_pages", new ArrayList<>(Collections.singleton("1")));
+        params.put("description", new ArrayList<>(Collections.singleton("true")));
+        params.put("ip", new ArrayList<>(Collections.singleton("188.243.70.188")));
+        params.put("title", new ArrayList<>(Collections.singleton("Авито | чехлы | Транспорт | Запчасти и аксессуары | По всей России | 2018-09-26 08:15:09")));
+
+        DBHandler.createDelayTask(token1, params);
+
         System.exit(1);
 
         List<String> allLines = Files.readAllLines(Paths.get("history.csv"));
