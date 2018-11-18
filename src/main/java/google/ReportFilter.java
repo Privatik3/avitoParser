@@ -1,6 +1,8 @@
 package google;
 
-public class ReportFilter {
+import java.io.Serializable;
+
+public class ReportFilter implements Serializable {
 
     private boolean photo;
     private boolean description;

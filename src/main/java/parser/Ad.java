@@ -1,6 +1,8 @@
 package parser;
 
-public class Ad {
+import java.io.Serializable;
+
+public class Ad implements Serializable {
 
     private String id;
     private String url;
@@ -32,8 +34,6 @@ public class Ad {
     private String viewsAverageTenDay;
     private Integer maxTenDay;
     private String maxTenDate;
-
-
 
     public Ad(PageInfo info) {
         this.id = info.getId();

@@ -23,6 +23,9 @@ import parser.*;
 import socket.EventSocket;
 import utility.RequestManager;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.ObjectOutputStream;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -36,6 +39,8 @@ public class Task {
 
     private String id;
     private Type type;
+
+    private Boolean saveReport = true;
 
     private String token;
     private String title = "";
@@ -51,7 +56,11 @@ public class Task {
         this.id = id;
         this.token = token;
         this.params = new HashMap<>(params);
-        this.type = type;
+
+        if (saveReport)
+            this.type = Type.DELAY;
+        else
+            this.type = type;
 
         if (params.containsKey("ip")) {
             ip = params.get("ip").get(0).toLowerCase();
@@ -247,7 +256,19 @@ public class Task {
 
             RequestManager.closeClient();
 
-            this.resultLink = SheetsExample.generateSheet(title, result, reportFilter);
+            if (saveReport) {
+                FileOutputStream rOut = new FileOutputStream(new File("reportBackUp.txt"));
+                ObjectOutputStream rObg = new ObjectOutputStream(rOut);
+                rObg.writeObject(result);
+
+                FileOutputStream fOut = new FileOutputStream(new File("filterBackUp.txt"));
+                ObjectOutputStream fObg = new ObjectOutputStream(fOut);
+                fObg.writeObject(reportFilter);
+                return;
+            } else {
+                this.resultLink = SheetsExample.generateSheet(title, result, reportFilter);
+            }
+
             System.out.println(resultLink);
 
             if (type == Task.Type.REGULAR)
@@ -271,7 +292,9 @@ public class Task {
             if (!e.getMessage().equals("Не удалось сформировать отчёт"))
                 e.printStackTrace();
 
-            sendTelegramReport(errorMessage);
+            if (!saveReport)
+                sendTelegramReport(errorMessage);
+
             throw new Exception("Ошибка во время парсинга");
         }
     }

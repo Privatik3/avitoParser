@@ -9,13 +9,14 @@ import com.pengrad.telegrambot.model.request.ParseMode;
 import com.pengrad.telegrambot.request.SendMessage;
 import com.pengrad.telegrambot.response.SendResponse;
 import db.DBHandler;
+import google.ReportFilter;
+import google.SheetsExample;
 import manager.TaskManager;
 import org.json.JSONObject;
+import parser.Ad;
 import utility.ProxyManager;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintStream;
+import java.io.*;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
@@ -30,25 +31,26 @@ import java.util.logging.Formatter;
 
 public class MainTest {
 
-    public static void main(String[] args) throws IOException, ParseException, InterruptedException {
+    public static void main(String[] args) throws Exception {
+
+        String title = "Авито | Работа | Вакансии | По всей России | 2018-11-18 03:14:55";
+
+        FileInputStream rIn = new FileInputStream("reportBackUp.txt");
+        ObjectInputStream rObg = new ObjectInputStream(rIn);
+        List<Ad> result = (List<Ad>) rObg.readObject();
+        rObg.close();
+
+        FileInputStream fIn = new FileInputStream("filterBackUp.txt");
+        ObjectInputStream fObg = new ObjectInputStream(fIn);
+        ReportFilter reportFilter = (ReportFilter) fObg.readObject();
+        fObg.close();
 
 
-        String token1 = "Test";
+        String resultLink = SheetsExample.generateSheet(title, result, reportFilter);
+        System.out.println(resultLink);
 
-        HashMap<String, ArrayList<String>> params = new HashMap<>();
-        params.put("category_id", new ArrayList<>(Collections.singleton("40")));
-        params.put("location_id", new ArrayList<>(Collections.singleton("621540")));
-        params.put("params[181]", new ArrayList<>(Collections.singleton("795")));
-        params.put("s", new ArrayList<>(Collections.singleton("101")));
-        params.put("max_pages", new ArrayList<>(Collections.singleton("1")));
-        params.put("description", new ArrayList<>(Collections.singleton("true")));
-        params.put("ip", new ArrayList<>(Collections.singleton("188.243.70.188")));
-        params.put("title", new ArrayList<>(Collections.singleton("Авито | чехлы | Транспорт | Запчасти и аксессуары | По всей России | 2018-09-26 08:15:09")));
-
-        DBHandler.createDelayTask(token1, params);
-
-        System.exit(1);
-
+        System.exit(0);
+/*
         List<String> allLines = Files.readAllLines(Paths.get("history.csv"));
         for (String line : allLines) {
             String[] data = line.split(";");
@@ -113,6 +115,6 @@ public class MainTest {
 
 //        TaskManager.initTask("xiiiangel", parameters);
 
-//        TaskManager.doTask();
+//        TaskManager.doTask();*/
     }
 }
