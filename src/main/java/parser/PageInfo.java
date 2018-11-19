@@ -13,6 +13,16 @@ public class PageInfo {
     private Boolean isUrgent;
     private Boolean isUpped;
 
+    private boolean isXL;
+
+    public boolean isXL() {
+        return isXL;
+    }
+
+    public void setXL(boolean XL) {
+        isXL = XL;
+    }
+
     public Integer getPosition() {
         return position;
     }

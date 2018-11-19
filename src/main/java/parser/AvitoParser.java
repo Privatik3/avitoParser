@@ -46,8 +46,7 @@ public class AvitoParser {
                         Integer.parseInt(tmpID);
                         id = tmpID;
                     }
-                } catch (Exception ignored) {
-                }
+                } catch (Exception ignored) {}
                 item.setId(id);
 
                 String finalId = id;
@@ -63,6 +62,12 @@ public class AvitoParser {
                 } catch (Exception ignored) {
                 }
                 item.setUrl(urlFull);
+
+                boolean isXL = false;
+                try {
+                    isXL = el.is("div[data-is-xl]");
+                } catch (Exception ignore) {}
+                item.setXL(isXL);
 
                 boolean isOnlyUpped = false;
                 boolean isLessTwoVAS = false;

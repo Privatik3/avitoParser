@@ -14,6 +14,7 @@ public class Ad implements Serializable {
     private Boolean isVip;
     private Boolean isUrgent;
     private Boolean isUpped;
+    private Boolean isXL;
 
     private String title;
     private String price;
@@ -45,6 +46,15 @@ public class Ad implements Serializable {
         this.isVip = info.getVip();
         this.isUrgent = info.getUrgent();
         this.isUpped = info.getUpped();
+        this.isXL = info.isXL();
+    }
+
+    public Boolean getXL() {
+        return isXL;
+    }
+
+    public void setXL(Boolean XL) {
+        isXL = XL;
     }
 
     public Boolean getHasStats() {
