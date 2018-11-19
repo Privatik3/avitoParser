@@ -33,7 +33,7 @@ public class MainTest {
 
     public static void main(String[] args) throws Exception {
 
-        String title = "Авито | Работа | Вакансии | По всей России | 2018-11-18 03:14:55";
+        String title = "Авито | Недвижимость | Квартиры | Алтайский край | 2018-11-18 04:34:03";
 
         FileInputStream rIn = new FileInputStream("reportBackUp.txt");
         ObjectInputStream rObg = new ObjectInputStream(rIn);
