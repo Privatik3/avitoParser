@@ -9,6 +9,16 @@ public class StatInfo {
     private Integer maxTenDay;
     private String maxTenDate;
 
+    private String viewYesterday = "0";
+
+    public String getViewYesterday() {
+        return viewYesterday;
+    }
+
+    public void setViewYesterday(String viewYesterday) {
+        this.viewYesterday = viewYesterday;
+    }
+
     public Integer getMaxTenDay() {
         return maxTenDay;
     }

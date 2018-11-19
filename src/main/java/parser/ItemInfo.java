@@ -18,6 +18,25 @@ public class ItemInfo {
     private String phone;
     private Boolean hasStats;
 
+    private Boolean isShop = false;
+    private String activeAd = "1";
+
+    public Boolean isShop() {
+        return isShop;
+    }
+
+    public void setShop(Boolean shop) {
+        isShop = shop;
+    }
+
+    public String getActiveAd() {
+        return activeAd;
+    }
+
+    public void setActiveAd(String activeAd) {
+        this.activeAd = activeAd;
+    }
+
     public Boolean getHasStats() {
         return hasStats;
     }

@@ -13,6 +13,34 @@ public class PageInfo {
     private Boolean isUrgent;
     private Boolean isUpped;
 
+    private Boolean isXL = false;
+    private Boolean isPriceDown = false;
+    private Boolean isDelivery = false;
+
+    public Boolean isPriceDown() {
+        return isPriceDown;
+    }
+
+    public void setPriceDown(Boolean priceDown) {
+        isPriceDown = priceDown;
+    }
+
+    public Boolean isDelivery() {
+        return isDelivery;
+    }
+
+    public void setDelivery(Boolean delivery) {
+        isDelivery = delivery;
+    }
+
+    public boolean isXL() {
+        return isXL;
+    }
+
+    public void setXL(boolean XL) {
+        isXL = XL;
+    }
+
     public Integer getPosition() {
         return position;
     }
