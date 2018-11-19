@@ -35,7 +35,7 @@ import java.util.logging.Logger;
 public class Task {
 
     private static Logger log = Logger.getLogger("");
-    private static TelegramBot bot = new TelegramBot("695944699:AAH05*****************");
+    private static TelegramBot bot = new TelegramBot("695944699:AAH05Jq2kZW7ysYoZBqtrJ_DGd6_--kdP90");
 
     private String id;
     private Type type;

@@ -14,7 +14,6 @@ public class Ad implements Serializable {
     private Boolean isVip;
     private Boolean isUrgent;
     private Boolean isUpped;
-    private Boolean isXL;
 
     private String title;
     private String price;
@@ -36,6 +35,15 @@ public class Ad implements Serializable {
     private Integer maxTenDay;
     private String maxTenDate;
 
+    // Новые элементы
+    private Boolean isXL; // +
+    private Boolean isPriceDown = false; // +
+    private Boolean isDelivery = false; // +
+
+    private Boolean isShop = false; // +
+    private String activeAd = "1"; // +
+    private String viewYesterday = "0"; // +
+
     public Ad(PageInfo info) {
         this.id = info.getId();
         this.url = info.getUrl();
@@ -46,7 +54,47 @@ public class Ad implements Serializable {
         this.isVip = info.getVip();
         this.isUrgent = info.getUrgent();
         this.isUpped = info.getUpped();
+
+        this.isPriceDown = info.isPriceDown();
+        this.isDelivery = info.isDelivery();
         this.isXL = info.isXL();
+    }
+
+    public void addPageInfo(ItemInfo info) {
+        this.title = info.getTitle();
+        this.price = info.getPrice();
+        this.views = info.getViews();
+        this.dailyViews = info.getDailyViews();
+        this.address = info.getAddress();
+        this.data = info.getData();
+        this.numberPictures = info.getNumberPictures();
+        this.text = info.getText();
+        this.quantityText = info.getQuantityText();
+        this.seller = info.getSeller();
+        this.sellerId = info.getSellerId();
+        this.phone= info.getPhone();
+        this.hasStats= info.getHasStats();
+
+        this.isShop = info.isShop();
+        this.activeAd = info.getActiveAd();
+    }
+
+    public void addStatInfo(StatInfo info) {
+        this.dateApplication = info.getDateApplication();
+        this.viewsTenDay= info.getViewsTenDay();
+        this.viewsAverageTenDay= info.getViewsAverageTenDay();
+        this.maxTenDay = info.getMaxTenDay();
+        this.maxTenDate = info.getMaxTenDate();
+
+        this.viewYesterday = info.getViewYesterday();
+    }
+
+    public String getActiveAd() {
+        return activeAd;
+    }
+
+    public void setActiveAd(String activeAd) {
+        this.activeAd = activeAd;
     }
 
     public Boolean getXL() {
@@ -275,31 +323,6 @@ public class Ad implements Serializable {
 
     public void setUrl(String url) {
         this.url = url;
-    }
-
-    public void addPageInfo(ItemInfo info) {
-
-        this.title = info.getTitle();
-        this.price = info.getPrice();
-        this.views = info.getViews();
-        this.dailyViews = info.getDailyViews();
-        this.address = info.getAddress();
-        this.data = info.getData();
-        this.numberPictures = info.getNumberPictures();
-        this.text = info.getText();
-        this.quantityText = info.getQuantityText();
-        this.seller = info.getSeller();
-        this.sellerId = info.getSellerId();
-        this.phone= info.getPhone();
-        this.hasStats= info.getHasStats();
-    }
-
-    public void addStatInfo(StatInfo info) {
-        this.dateApplication = info.getDateApplication();
-        this.viewsTenDay= info.getViewsTenDay();
-        this.viewsAverageTenDay= info.getViewsAverageTenDay();
-        this.maxTenDay = info.getMaxTenDay();
-        this.maxTenDate = info.getMaxTenDate();
     }
 
     @Override

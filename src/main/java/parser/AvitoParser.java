@@ -69,6 +69,18 @@ public class AvitoParser {
                 } catch (Exception ignore) {}
                 item.setXL(isXL);
 
+                boolean isDelivery = false;
+                try {
+                    isDelivery = el.select("div.catalog-delivery").size() > 0;
+                } catch (Exception ignore) {}
+                item.setDelivery(isDelivery);
+
+                boolean isPriceDown = false;
+                try {
+                    isPriceDown = el.select("span.price-lower").size() > 0;
+                } catch (Exception ignore) {}
+                item.setPriceDown(isPriceDown);
+
                 boolean isOnlyUpped = false;
                 boolean isLessTwoVAS = false;
                 boolean isPremium = false;
@@ -243,6 +255,20 @@ public class AvitoParser {
             }
             item.setSeller(seller);
 
+            String activeAd = "1";
+            try {
+                activeAd = ob.getJSONObject("item").getJSONObject("item").getJSONObject("seller").getString("summary");
+                activeAd = activeAd.replaceAll("\\s.*", "");
+            } catch (Exception ignored) { }
+            item.setActiveAd(activeAd);
+
+            Boolean isShop = false;
+            try {
+                String adOwner = ob.getJSONObject("item").getJSONObject("item").getJSONObject("seller").getString("postfix");
+                isShop = !adOwner.toLowerCase().contains("частное");
+            } catch (Exception ignored) { }
+            item.setShop(isShop);
+
             int sellerId = 0;
             try {
                 sellerId = ob.getJSONObject("item").getJSONObject("item").getInt("id");
@@ -351,9 +377,14 @@ public class AvitoParser {
             String viewsTenDay = "0";
             int maxTenDayInt = 0;
             String maxTenDate = "0";
+            String viewYesterday = "0";
             try {
                 int viewsTenDayArrayNew = chart.getJSONArray("columns").getJSONArray(1).length() - 1;
                 int viewsTenDayArrayTest = viewsTenDayArrayNew;
+
+                if (viewsTenDayArrayNew > 1)
+                    viewYesterday = String.valueOf(chart.getJSONArray("columns").getJSONArray(1).getInt(viewsTenDayArrayNew - 1));
+
                 Integer timeData = 0;
                 for (int x = 0; (viewsTenDayArrayNew > 10) ? x <= 10 : x <= (viewsTenDayArrayNew - 1); x++) {
                     int viewsTenDayTest = chart.getJSONArray("columns").getJSONArray(1).getInt(viewsTenDayArrayTest--);
@@ -371,6 +402,7 @@ public class AvitoParser {
             item.setMaxTenDate(maxTenDate);
             item.setViewsTenDay(String.valueOf(viewsTenDayArray));
             item.setViewsAverageTenDay(viewsTenDay);
+            item.setViewYesterday(viewYesterday);
 
             // Здесь уже норм код
             result.add(item);
