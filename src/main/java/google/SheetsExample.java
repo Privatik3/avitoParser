@@ -101,12 +101,15 @@ public class SheetsExample {
             offlineMod = descLength > 3_000_000;
         }
 
+        if (filters.isDate())
+            new ViewAnalysis(ads);
 
         List<Integer> viewsMax = new ArrayList<Integer>();
         List<Integer> dailyViewsMax = new ArrayList<Integer>();
         List<Integer> viewsTenDayMax = new ArrayList<Integer>();
         List<Integer> maxTenDayMax = new ArrayList<Integer>();
         List<Integer> viewsAverageTenDayMax = new ArrayList<Integer>();
+        List<Integer> maxViewYesterdayMax = new ArrayList<Integer>();
         for (int i = 0; i < ads.size(); i++) {
             Ad ad = ads.get(i);
             if (isNum(ad.getViews())) {
@@ -118,6 +121,9 @@ public class SheetsExample {
             if (isNum(ad.getViewsTenDay())) {
                 viewsTenDayMax.add(Integer.parseInt(ad.getViewsTenDay()));
             }
+            try {
+                maxViewYesterdayMax.add(Integer.parseInt(ad.getViewYesterday()));
+            } catch (Exception ignore) {}
 
             Integer maxTenDay = ad.getMaxTenDay();
             if (maxTenDay != null)
@@ -137,6 +143,8 @@ public class SheetsExample {
         int minMaxTenDay = Collections.min(maxTenDayMax);
         int maxViewsAverageTenDay = Collections.max(viewsAverageTenDayMax);
         int minViewsAverageTenDay = Collections.min(viewsAverageTenDayMax);
+        int maxViewYesterday = Collections.max(maxViewYesterdayMax);
+        int minViewYesterday = Collections.min(maxViewYesterdayMax);
 
 
         try {
@@ -205,6 +213,15 @@ public class SheetsExample {
                 } catch (Exception ignore) {
                 }
 
+                try {
+                    if (ad.getPriceDown())
+                        clValues.add(getCellData(1));
+                    else
+                        clValues.add(getCellData(0));
+                } catch (Exception ignore) {
+                        clValues.add(getCellData(0));
+                }
+
                 String views = "";
                 try {
                     views = ad.getViews();
@@ -228,119 +245,19 @@ public class SheetsExample {
                     clValues.add(getCellData(0));
                 }
 
-
-                String services = "";
+                String viewYesterday = "";
                 try {
-                    if (ad.getPremium()) {
-                        services = services + "1 ";
-                    }
-                    if (ad.getVip()) {
-                        services = services + "2 ";
-                    }
-                    if (ad.getUrgent()) {
-                        services = services + "3 ";
-                    }
-                    if (ad.getUpped()) {
-                        services = services + "4 ";
-                    }
+                    viewYesterday = ad.getViewYesterday();
+                    double coff = (Integer.parseInt(viewYesterday) / ((maxViewYesterday - minViewYesterday) / 100.0)) / 100;
+                    int alpha = (int) (255 * coff);
+                    clValues.add(getCellData(Integer.parseInt(viewYesterday), new Color(60,120,216, alpha)));
                 } catch (Exception ignore) {
+                    clValues.add(getCellData(0));
                 }
-                clValues.add(getCellData(services));
-
-                String address = "";
-                try {
-                    address = ad.getAddress();
-                } catch (Exception ignore) {
-                }
-                clValues.add(getCellData(address));
-
-
-                String data = "";
-                try {
-                    data = ad.getData();
-                } catch (Exception ignore) {
-                }
-                clValues.add(getCellData(data));
-
-                String url = "";
-                try {
-                    url = ad.getUrl();
-                } catch (Exception ignore) {
-                }
-                clValues.add(getCellData(url));
-
-                if (filters.isPhoto()) {
-                    String numberPictures = "";
-                    try {
-                        numberPictures = ad.getNumberPictures();
-                    } catch (Exception ignore) {
-                    }
-                    clValues.add(getCellData(numberPictures));
-                }
-
-
-                if (filters.isDescription()) {
-                    String text = "";
-                    try {
-                        if (offlineMod) {
-                            text = ad.getId();
-                        } else {
-                            text = ad.getText();
-                            text = text.trim();
-                        }
-                    } catch (Exception ignore) {
-                    }
-                    clValues.add(getCellData(text.replace("\u00A0", " ").trim()));
-                }
-
-
-                if (filters.isDescriptionLength()) {
-                    String quantityText = "";
-                    try {
-                        quantityText = ad.getQuantityText();
-                    } catch (Exception ignore) {
-                    }
-                    clValues.add(getCellData(quantityText));
-                }
-
-
-                if (filters.isSellerName()) {
-                    String seller = "";
-                    try {
-                        seller = ad.getSeller();
-                    } catch (Exception ignore) {
-                    }
-                    clValues.add(getCellData(seller));
-                }
-
-                String sellerId = "";
-                try {
-                    sellerId = ad.getSellerId();
-                } catch (Exception ignore) {
-                }
-                clValues.add(getCellData(sellerId));
-
-
-                if (filters.isPhone()) {
-                    String phone = "";
-                    try {
-                        phone = ad.getPhone();
-                    } catch (Exception ignore) {
-                    }
-                    clValues.add(getCellData(phone));
-                }
-
-
 
 
                 if (filters.isDate()) {
                     if (ad.hasStats() != null && ad.hasStats()) {
-                        String dateApplication = "";
-                        try {
-                            dateApplication = ad.getDateApplication();
-                        } catch (Exception ignore) {
-                        }
-                        clValues.add(getCellData(dateApplication));
 
                         try {
                             String viewsTenDay = ad.getViewsTenDay();
@@ -378,7 +295,6 @@ public class SheetsExample {
                         }
 
                     } else {
-                        clValues.add(getCellData(new SimpleDateFormat("yyyy.MM.dd").format(new Date())));
 
                         try {
                             clValues.add(getCellData(Integer.parseInt(ad.getViews())));
@@ -401,6 +317,158 @@ public class SheetsExample {
                         }
                     }
                 }
+
+
+                String services = "";
+                try {
+                    if (ad.getPremium()) {
+                        services = services + "1 ";
+                    }
+                    if (ad.getVip()) {
+                        services = services + "2 ";
+                    }
+                    if (ad.getUrgent()) {
+                        services = services + "3 ";
+                    }
+                    if (ad.getUpped()) {
+                        services = services + "4 ";
+                    }
+                    if (ad.getXL()) {
+                        services = services + "5 ";
+                    }
+                } catch (Exception ignore) {
+                }
+                clValues.add(getCellData(services));
+
+                String data = "";
+                try {
+                    data = ad.getData();
+                } catch (Exception ignore) {
+                }
+                clValues.add(getCellData(data));
+
+
+                if (filters.isDate()) {
+                    if (ad.hasStats() != null && ad.hasStats()) {
+
+                        String dateApplication = "";
+                        try {
+                            dateApplication = ad.getDateApplication();
+                        } catch (Exception ignore) {
+                        }
+                        clValues.add(getCellData(dateApplication));
+
+                    } else {
+                        clValues.add(getCellData(new SimpleDateFormat("yyyy.MM.dd").format(new Date())));
+
+                    }
+                }
+
+                if (filters.isPhoto()) {
+                    String numberPictures = "";
+                    try {
+                        numberPictures = ad.getNumberPictures();
+                    } catch (Exception ignore) {
+                    }
+                    clValues.add(getCellData(numberPictures));
+                }
+
+                if (filters.isDescription()) {
+                    String text = "";
+                    try {
+                        if (offlineMod) {
+                            text = ad.getId();
+                        } else {
+                            text = ad.getText();
+                            text = text.trim();
+                        }
+                    } catch (Exception ignore) {
+                    }
+                    clValues.add(getCellData(text.replace("\u00A0", " ").trim()));
+                }
+
+                if (filters.isDescriptionLength()) {
+                    String quantityText = "";
+                    try {
+                        quantityText = ad.getQuantityText();
+                    } catch (Exception ignore) {
+                    }
+                    clValues.add(getCellData(quantityText));
+                }
+
+                int delivery = 0;
+                try {
+                    if (ad.getDelivery());
+                    {
+                        delivery = 1;
+                    }
+                } catch (Exception ignore) {
+                }
+                clValues.add(getCellData(delivery));
+
+                if (filters.isSellerName()) {
+                    String seller = "";
+                    try {
+                        seller = ad.getSeller();
+                    } catch (Exception ignore) {
+                    }
+                    clValues.add(getCellData(seller));
+                }
+
+                String sellerId = "";
+                try {
+                    sellerId = ad.getSellerId();
+                    if (ad.getShop()) {
+                        int alpha = 255;
+                        clValues.add(getCellData(Integer.parseInt(sellerId), new Color(76,175,80, alpha)));
+                    } else {
+                        int alpha = 255;
+                        clValues.add(getCellData(Integer.parseInt(sellerId), new Color(33,150,243, alpha)));
+                    }
+                } catch (Exception ignore) {
+                    clValues.add(getCellData(0));
+                }
+
+
+                if (filters.isPhone()) {
+                    String phone = "";
+                    try {
+                        phone = ad.getPhone();
+                    } catch (Exception ignore) {
+                    }
+                    clValues.add(getCellData(phone));
+                }
+
+                String activeAd = "0";
+                try {
+                    activeAd = ad.getActiveAd();
+                } catch (Exception ignore) {
+                }
+                clValues.add(getCellData(activeAd));
+
+                String address = "";
+                try {
+                    address = ad.getAddress();
+                } catch (Exception ignore) {
+                }
+                clValues.add(getCellData(address));
+
+
+
+                String url = "";
+                try {
+                    url = ad.getUrl();
+                } catch (Exception ignore) {
+                }
+                clValues.add(getCellData(url));
+
+
+
+
+
+
+
+
 
                 rowVal.setValues(clValues);
                 rData.add(rowVal);
@@ -778,6 +846,10 @@ public class SheetsExample {
         CellData header1 = getCellData("Цена", headerBgColor, true);
         header1.setNote("Цена товара/услуги на момент парсинга");
         clHeaders.add(header1);
+        CellData header01 = getCellData("Пониж.Цена", headerBgColor, true);
+        header01.setNote("\"1\" - означает наличие знака понижения цены, продавец снизил цену.\n" +
+                "\"0\" - означает отсутствие такого знака, цена не снижалась");
+        clHeaders.add(header01);
         CellData header2 = getCellData("Просм. Всего", headerBgColor, true);
         header2.setNote("Общее количество просмотров на данном объявлении в момент парсинга.");
         clHeaders.add(header2);
@@ -785,54 +857,11 @@ public class SheetsExample {
         header3.setNote("Количество просмотров на данном объявлении за сегодняшний день,\n" +
                 "с 00:00 часов до момента парсинга.");
         clHeaders.add(header3);
-        CellData header4 = getCellData("Методы продвижения", headerBgColor, true);
-        header4.setNote("Методы продвижения (платные услуги)\n" +
-                "1 - Премиум\n" +
-                "2 - VIP\n" +
-                "3 - Выделение\n" +
-                "4 - Поднятие\n" +
-                "5 - XL");
-        clHeaders.add(header4);
-        CellData header5 = getCellData("Адрес", headerBgColor, true);
-        clHeaders.add(header5);
-        CellData header6 = getCellData("Время поднятия (Переделать)", headerBgColor, true);
-        header6.setNote("Дата и время крайнего поднятия объявления");
-        clHeaders.add(header6);
-        CellData header7 = getCellData("Ссылка", headerBgColor, true);
-        clHeaders.add(header7);
-
-
-        if (filters.isPhoto()) {
-            CellData header8 = getCellData("Фото (шт)", headerBgColor, true);
-            header8.setNote("Количество фотографий размещеных в данном объявлении");
-            clHeaders.add(header8);
-        }
-        if (filters.isDescription()) {
-            CellData header9 = getCellData("Текст", headerBgColor, true);
-            header9.setNote("Текст (описание) объявления");
-            clHeaders.add(header9);
-        }
-        if (filters.isDescriptionLength()) {
-            CellData header10 = getCellData("Кол-во знаков", headerBgColor, true);
-            header10.setNote("Количество знаков (символов) в тексте объявления");
-            clHeaders.add(header10);
-        }
-        if (filters.isSellerName()) {
-            CellData header11 = getCellData("Имя продавца", headerBgColor, true);
-            clHeaders.add(header11);
-
-        }
-        CellData header12 = getCellData("ID продавца", headerBgColor, true);
-        clHeaders.add(header12);
-        if (filters.isPhone()) {
-            CellData header13 = getCellData("Телефон", headerBgColor, true);
-            clHeaders.add(header13);
-        }
-
+        CellData header03 = getCellData("Просм. Вчера", headerBgColor, true);
+        header03.setNote("Количество просмотров на данном объявлении за весь вчерашний день, \n" +
+                "с 00:00 до 24:00 часов");
+        clHeaders.add(header03);
         if (filters.isDate()) {
-            CellData header14 = getCellData("Дата Создания", headerBgColor, true);
-            header14.setNote("Дата создания объявления");
-            clHeaders.add(header14);
             CellData header15 = getCellData("Просм. 10 дней", headerBgColor, true);
             header15.setNote("Общее количество просмотров за предыдущие 10 дней, включая сегодняшний");
             clHeaders.add(header15);
@@ -845,6 +874,78 @@ public class SheetsExample {
             header18.setNote("Среднее количество просмотров за предыдущие 10 дней.");
             clHeaders.add(header18);
         }
+        CellData header4 = getCellData("Методы продвижения", headerBgColor, true);
+        header4.setNote("Методы продвижения (платные услуги)\n" +
+                "1 - Премиум\n" +
+                "2 - VIP\n" +
+                "3 - Выделение\n" +
+                "4 - Поднятие\n" +
+                "5 - XL");
+        clHeaders.add(header4);
+        CellData header6 = getCellData("Время поднятия", headerBgColor, true);
+        header6.setNote("Дата и время крайнего поднятия объявления");
+        clHeaders.add(header6);
+
+        if (filters.isDate()) {
+            CellData header14 = getCellData("Дата Создания", headerBgColor, true);
+            header14.setNote("Дата создания объявления");
+            clHeaders.add(header14);
+        }
+
+        if (filters.isPhoto()) {
+            CellData header8 = getCellData("Фото (шт)", headerBgColor, true);
+            header8.setNote("Количество фотографий размещеных в данном объявлении");
+            clHeaders.add(header8);
+        }
+
+
+        if (filters.isDescription()) {
+            CellData header9 = getCellData("Текст", headerBgColor, true);
+            header9.setNote("Текст (описание) объявления");
+            clHeaders.add(header9);
+        }
+
+        if (filters.isDescriptionLength()) {
+            CellData header10 = getCellData("Кол-во знаков", headerBgColor, true);
+            header10.setNote("Количество знаков (символов) в тексте объявления");
+            clHeaders.add(header10);
+        }
+
+        CellData header05 = getCellData("Доставка", headerBgColor, true);
+        header05.setNote("\"1\" - Возможна доставка\n" +
+                "\"0\" - Продавец не указал о возможной доставке");
+        clHeaders.add(header05);
+
+        if (filters.isSellerName()) {
+            CellData header11 = getCellData("Имя продавца", headerBgColor, true);
+            clHeaders.add(header11);
+
+        }
+
+        CellData header12 = getCellData("ID продавца", headerBgColor, true);
+        clHeaders.add(header12);
+        if (filters.isPhone()) {
+            CellData header13 = getCellData("Телефон", headerBgColor, true);
+            clHeaders.add(header13);
+        }
+
+        CellData header10 = getCellData("Активных объявлений", headerBgColor, true);
+        header10.setNote("Количество Активных объявлений данного продавца, размещенных на Авито");
+        clHeaders.add(header10);
+
+        CellData header5 = getCellData("Адрес", headerBgColor, true);
+        clHeaders.add(header5);
+
+        CellData header7 = getCellData("Ссылка", headerBgColor, true);
+        clHeaders.add(header7);
+
+
+
+
+
+
+
+
 
         rowData.setValues(clHeaders);
         return rowData;
