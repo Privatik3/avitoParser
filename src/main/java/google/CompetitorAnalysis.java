@@ -40,7 +40,7 @@ public class CompetitorAnalysis {
         int maxView = 0;
         for (Ad ad : sellerAds) {
             this.position += ad.getPosition();
-            this.photo += Integer.parseInt(ad.getPhone());
+            this.photo += Integer.parseInt(ad.getNumberPictures());
             this.textCount += Integer.parseInt(ad.getQuantityText());
             this.delivery += ad.getDelivery() ? 1 : 0;
 

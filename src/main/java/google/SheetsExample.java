@@ -27,27 +27,24 @@ import com.google.api.services.drive.model.Permission;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.SheetsScopes;
 import com.google.api.services.sheets.v4.model.*;
-import org.apache.poi.hssf.usermodel.HSSFSheet;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.xssf.usermodel.*;
 import parser.Ad;
 
-import java.awt.*;
 import java.awt.Color;
 import java.io.*;
 import java.net.InetAddress;
-import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @SuppressWarnings("Duplicates")
 public class SheetsExample {
@@ -72,15 +69,6 @@ public class SheetsExample {
         }
     }
 
-    private static boolean isNum(String s) {
-        try {
-            Integer.parseInt(s.replaceAll(" ", ""));
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
     private static Color convertRgba(Color fgColor) {
         int r, g, b;
         r = fgColor.getRed() * fgColor.getAlpha() + 255 * (255 - fgColor.getAlpha());
@@ -101,51 +89,7 @@ public class SheetsExample {
             offlineMod = descLength > 3_000_000;
         }
 
-        if (filters.isDate())
-            new ViewAnalysis(ads);
-
-        List<Integer> viewsMax = new ArrayList<Integer>();
-        List<Integer> dailyViewsMax = new ArrayList<Integer>();
-        List<Integer> viewsTenDayMax = new ArrayList<Integer>();
-        List<Integer> maxTenDayMax = new ArrayList<Integer>();
-        List<Integer> viewsAverageTenDayMax = new ArrayList<Integer>();
-        List<Integer> maxViewYesterdayMax = new ArrayList<Integer>();
-        for (int i = 0; i < ads.size(); i++) {
-            Ad ad = ads.get(i);
-            if (isNum(ad.getViews())) {
-                viewsMax.add(Integer.parseInt(ad.getViews()));
-            }
-            if (isNum(ad.getDailyViews())) {
-                dailyViewsMax.add(Integer.parseInt(ad.getDailyViews()));
-            }
-            if (isNum(ad.getViewsTenDay())) {
-                viewsTenDayMax.add(Integer.parseInt(ad.getViewsTenDay()));
-            }
-            try {
-                maxViewYesterdayMax.add(Integer.parseInt(ad.getViewYesterday()));
-            } catch (Exception ignore) {}
-
-            Integer maxTenDay = ad.getMaxTenDay();
-            if (maxTenDay != null)
-                maxTenDayMax.add(maxTenDay);
-
-            if (isNum(ad.getViewsAverageTenDay())) {
-                viewsAverageTenDayMax.add(Integer.parseInt(ad.getViewsAverageTenDay()));
-            }
-        }
-        int maxViews = Collections.max(viewsMax);
-        int minViews = Collections.min(viewsMax);
-        int maxDailyViews = Collections.max(dailyViewsMax);
-        int minDailyViews = Collections.min(dailyViewsMax);
-        int maxViewsTenDay = Collections.max(viewsTenDayMax);
-        int minViewsTenDay = Collections.min(viewsTenDayMax);
-        int maxMaxTenDay = Collections.max(maxTenDayMax);
-        int minMaxTenDay = Collections.min(maxTenDayMax);
-        int maxViewsAverageTenDay = Collections.max(viewsAverageTenDayMax);
-        int minViewsAverageTenDay = Collections.min(viewsAverageTenDayMax);
-        int maxViewYesterday = Collections.max(maxViewYesterdayMax);
-        int minViewYesterday = Collections.min(maxViewYesterdayMax);
-
+        ColorData colorData = new ColorData(ads);
 
         try {
             // 1. CREATE NEW SPREADSHEET
@@ -156,10 +100,12 @@ public class SheetsExample {
             spreadProp.setTimeZone("Europe/Moscow");
             requestBody.setProperties(spreadProp);
 
+
             List<Sheet> sheets = new ArrayList<>();
 
             // -------------------- MAIN SHEET --------------------
             Sheet mainSheet = new Sheet();
+
 
             SheetProperties sheetProperties = new SheetProperties();
             sheetProperties.setTitle("Объявления");
@@ -179,298 +125,8 @@ public class SheetsExample {
 
             // -------------------- SET VALUES --------------------
             for (Ad ad : ads) {
-
-                RowData rowVal = new RowData();
-                List<CellData> clValues = new ArrayList<>();
-
-                if (filters.isPosition()) {
-                    Integer position = 0;
-                    try {
-                        position = ad.getPosition();
-                    } catch (Exception ignore) { }
-
-                    double coff = (position / 00.7) / 100;
-                    int alpha = (int) (255 * (coff > 1 ? 0 : (1 - coff)));
-                    clValues.add(getCellData(position, new Color(183,225,205, alpha)));
-                }
-
-                String titleName = "";
-                try {
-                    titleName = ad.getTitle();
-                } catch (Exception ignore) {
-                }
-                if (titleName.isEmpty()) continue;
-                clValues.add(getCellData(titleName));
-
-                try {
-                    String price = ad.getPrice();
-                    try {
-                        int priceInt = Integer.parseInt(price.replaceAll(" ", ""));
-                        clValues.add(getCellData(priceInt));
-                    } catch (Exception ignored) {
-                        clValues.add(getCellData(price));
-                    }
-                } catch (Exception ignore) {
-                }
-
-                try {
-                    if (ad.getPriceDown())
-                        clValues.add(getCellData(1));
-                    else
-                        clValues.add(getCellData(0));
-                } catch (Exception ignore) {
-                        clValues.add(getCellData(0));
-                }
-
-                String views = "";
-                try {
-                    views = ad.getViews();
-
-                    double coff = (Integer.parseInt(views) / ((maxViews - minViews) / 100.0)) / 100;
-                    int alpha = (int) (255 * coff);
-
-                    clValues.add(getCellData(Integer.parseInt(views), new Color(255,214,102, alpha)));
-                } catch (Exception ignore) {
-                    clValues.add(getCellData(0));
-                }
-
-
-                String dailyViews = "";
-                try {
-                    dailyViews = ad.getDailyViews();
-                    double coff = (Integer.parseInt(dailyViews) / ((maxDailyViews - minDailyViews) / 100.0)) / 100;
-                    int alpha = (int) (255 * coff);
-                    clValues.add(getCellData(Integer.parseInt(dailyViews), new Color(147,196,125, alpha)));
-                } catch (Exception ignore) {
-                    clValues.add(getCellData(0));
-                }
-
-                String viewYesterday = "";
-                try {
-                    viewYesterday = ad.getViewYesterday();
-                    double coff = (Integer.parseInt(viewYesterday) / ((maxViewYesterday - minViewYesterday) / 100.0)) / 100;
-                    int alpha = (int) (255 * coff);
-                    clValues.add(getCellData(Integer.parseInt(viewYesterday), new Color(60,120,216, alpha)));
-                } catch (Exception ignore) {
-                    clValues.add(getCellData(0));
-                }
-
-
-                if (filters.isDate()) {
-                    if (ad.hasStats() != null && ad.hasStats()) {
-
-                        try {
-                            String viewsTenDay = ad.getViewsTenDay();
-
-                            double coff = (Integer.parseInt(viewsTenDay) / ((maxViewsTenDay - minViewsTenDay) / 100.0)) / 100;
-                            int alpha = (int) (255 * coff);
-                            clValues.add(getCellData(Integer.parseInt(viewsTenDay),new Color(194,123,160, alpha)));
-                        } catch (Exception ignore) {
-                            clValues.add(getCellData(0));
-                        }
-
-                        try {
-                            Integer maxTenDay = ad.getMaxTenDay();
-                            double coff = (maxTenDay / ((maxMaxTenDay - minMaxTenDay) / 100.0)) / 100;
-                            int alpha = (int) (255 * coff);
-                            clValues.add(getCellData(maxTenDay,new Color(87,187,138, alpha)));
-                        } catch (Exception ignore) {
-                            clValues.add(getCellData(0));
-                        }
-
-                        try {
-                            String maxTenDate = ad.getMaxTenDate();
-                            clValues.add(getCellData(maxTenDate));
-                        } catch (Exception ignore) {
-                            clValues.add(getCellData(0));
-                        }
-
-                        try {
-                            String viewsAverageTenDay = ad.getViewsAverageTenDay();
-                            double coff = (Integer.parseInt(viewsAverageTenDay) / ((maxViewsAverageTenDay - minViewsAverageTenDay) / 100.0)) / 100;
-                            int alpha = (int) (255 * coff);
-                            clValues.add(getCellData(Integer.parseInt(viewsAverageTenDay),new Color(234,153,153, alpha)));
-                        } catch (Exception ignore) {
-                            clValues.add(getCellData(0));
-                        }
-
-                    } else {
-
-                        try {
-                            clValues.add(getCellData(Integer.parseInt(ad.getViews())));
-                        } catch (Exception ignore) {
-                            clValues.add(getCellData(0));
-                        }
-
-                        try {
-                            clValues.add(getCellData(Integer.parseInt(ad.getViews())));
-                        } catch (Exception e) {
-                            clValues.add(getCellData(0));
-                        }
-
-                        clValues.add(getCellData(new SimpleDateFormat("yyyy.MM.dd").format(new Date())));
-
-                        try {
-                            clValues.add(getCellData(Integer.parseInt(ad.getViews())));
-                        } catch (Exception ignore) {
-                            clValues.add(getCellData(0));
-                        }
-                    }
-                }
-
-
-                String services = "";
-                try {
-                    if (ad.getPremium()) {
-                        services = services + "1 ";
-                    }
-                    if (ad.getVip()) {
-                        services = services + "2 ";
-                    }
-                    if (ad.getUrgent()) {
-                        services = services + "3 ";
-                    }
-                    if (ad.getUpped()) {
-                        services = services + "4 ";
-                    }
-                    if (ad.getXL()) {
-                        services = services + "5 ";
-                    }
-                } catch (Exception ignore) {
-                }
-                clValues.add(getCellData(services));
-
-                String data = "";
-                try {
-                    data = ad.getData();
-                } catch (Exception ignore) {
-                }
-                clValues.add(getCellData(data));
-
-
-                if (filters.isDate()) {
-                    if (ad.hasStats() != null && ad.hasStats()) {
-
-                        String dateApplication = "";
-                        try {
-                            dateApplication = ad.getDateApplication();
-                        } catch (Exception ignore) {
-                        }
-                        clValues.add(getCellData(dateApplication));
-
-                    } else {
-                        clValues.add(getCellData(new SimpleDateFormat("yyyy.MM.dd").format(new Date())));
-
-                    }
-                }
-
-                if (filters.isPhoto()) {
-                    String numberPictures = "";
-                    try {
-                        numberPictures = ad.getNumberPictures();
-                    } catch (Exception ignore) {
-                    }
-                    clValues.add(getCellData(numberPictures));
-                }
-
-                if (filters.isDescription()) {
-                    String text = "";
-                    try {
-                        if (offlineMod) {
-                            text = ad.getId();
-                        } else {
-                            text = ad.getText();
-                            text = text.trim();
-                        }
-                    } catch (Exception ignore) {
-                    }
-                    clValues.add(getCellData(text.replace("\u00A0", " ").trim()));
-                }
-
-                if (filters.isDescriptionLength()) {
-                    String quantityText = "";
-                    try {
-                        quantityText = ad.getQuantityText();
-                    } catch (Exception ignore) {
-                    }
-                    clValues.add(getCellData(quantityText));
-                }
-
-                int delivery = 0;
-                try {
-                    if (ad.getDelivery());
-                    {
-                        delivery = 1;
-                    }
-                } catch (Exception ignore) {
-                }
-                clValues.add(getCellData(delivery));
-
-                if (filters.isSellerName()) {
-                    String seller = "";
-                    try {
-                        seller = ad.getSeller();
-                    } catch (Exception ignore) {
-                    }
-                    clValues.add(getCellData(seller));
-                }
-
-                String sellerId = "";
-                try {
-                    sellerId = ad.getSellerId();
-                    if (ad.getShop()) {
-                        int alpha = 255;
-                        clValues.add(getCellData(Integer.parseInt(sellerId), new Color(76,175,80, alpha)));
-                    } else {
-                        int alpha = 255;
-                        clValues.add(getCellData(Integer.parseInt(sellerId), new Color(33,150,243, alpha)));
-                    }
-                } catch (Exception ignore) {
-                    clValues.add(getCellData(0));
-                }
-
-
-                if (filters.isPhone()) {
-                    String phone = "";
-                    try {
-                        phone = ad.getPhone();
-                    } catch (Exception ignore) {
-                    }
-                    clValues.add(getCellData(phone));
-                }
-
-                String activeAd = "0";
-                try {
-                    activeAd = ad.getActiveAd();
-                } catch (Exception ignore) {
-                }
-                clValues.add(getCellData(activeAd));
-
-                String address = "";
-                try {
-                    address = ad.getAddress();
-                } catch (Exception ignore) {
-                }
-                clValues.add(getCellData(address));
-
-
-
-                String url = "";
-                try {
-                    url = ad.getUrl();
-                } catch (Exception ignore) {
-                }
-                clValues.add(getCellData(url));
-
-
-
-
-
-
-
-
-
-                rowVal.setValues(clValues);
+                RowData rowVal = getRowData(filters, offlineMod, ad, colorData);
+                if (rowVal == null) continue;
                 rData.add(rowVal);
             }
             // -------------------- SET VALUES ( END ) --------------------
@@ -493,9 +149,14 @@ public class SheetsExample {
 
             // -------------------- STATISTIC SHEET --------------------
             sheets.add(getStatisticSheet(ads));
+            if (filters.isDate()) {
+                sheets.add(getViewSheet(ads));
+                sheets.add(getCompetitorSheet(ads, filters));
+            }
 
             requestBody.setSheets(sheets);
             Sheets.Spreadsheets.Create request = sheetsService.spreadsheets().create(requestBody);
+
 
             Spreadsheet response = null;
             for (int i = 0; i < 3; i++) {
@@ -503,6 +164,7 @@ public class SheetsExample {
                     response = request.execute();
                     break;
                 } catch (Exception e) {
+                    e.printStackTrace();
                     Thread.sleep(5000);
                 }
             }
@@ -522,8 +184,18 @@ public class SheetsExample {
                 title = URLEncoder.encode(title, "UTF-8").replaceAll("\\+", "%20") + ".xslx";
 
                 return String.format("http://%s:8081/api/report/%s?fileID=%s", localHost.getHostAddress(), title, fileId);
-            } else
+            } else {
+
+                List<Request> requests = new ArrayList<>();
+                requests.add(createCellSizeRequest(0, 4, 150));
+                requests.add(createCellSizeRequest(4, 5, 20));
+                requests.add(createCellSizeRequest(5, 9, 150));
+
+                BatchUpdateSpreadsheetRequest body = new BatchUpdateSpreadsheetRequest().setRequests(requests);
+                sheetsService.spreadsheets().batchUpdate(response.getSpreadsheetId(), body).execute();
+
                 return response.getSpreadsheetUrl();
+            }
         } catch (Exception e) {
             log.log(Level.SEVERE, "Не удалось сформировать отчёт");
             e.printStackTrace();
@@ -531,6 +203,310 @@ public class SheetsExample {
                     "Не удалось получить ответ от Google API" :
                     "Не удалось сформировать отчёт"));
         }
+    }
+
+    private static RowData getRowData(ReportFilter filters, boolean offlineMod, Ad ad, ColorData colorData) {
+
+
+        RowData rowVal = new RowData();
+        List<CellData> clValues = new ArrayList<>();
+
+        if (filters.isPosition()) {
+            Integer position = 0;
+            try {
+                position = ad.getPosition();
+            } catch (Exception ignore) {
+            }
+
+            double coff = (position / 00.7) / 100;
+            int alpha = (int) (255 * (coff > 1 ? 0 : (1 - coff)));
+            clValues.add(getCellData(position, new Color(183, 225, 205, alpha)));
+        }
+
+        String titleName = "";
+        try {
+            titleName = ad.getTitle();
+        } catch (Exception ignore) {
+        }
+        if (titleName.isEmpty()) return null;
+        clValues.add(getCellData(titleName));
+
+        try {
+            String price = ad.getPrice();
+            try {
+                int priceInt = Integer.parseInt(price.replaceAll(" ", ""));
+                clValues.add(getCellData(priceInt));
+            } catch (Exception ignored) {
+                clValues.add(getCellData(price));
+            }
+        } catch (Exception ignore) {
+        }
+
+        try {
+            if (ad.getPriceDown())
+                clValues.add(getCellData(1));
+            else
+                clValues.add(getCellData(0));
+        } catch (Exception ignore) {
+            clValues.add(getCellData(0));
+        }
+
+        String views = "";
+        try {
+            views = ad.getViews();
+
+            double coff = (Integer.parseInt(views) / ((colorData.getMaxViews() - colorData.getMinViews()) / 100.0)) / 100;
+            int alpha = (int) (255 * ( colorData.isEmpty ? 0 : coff ));
+
+            clValues.add(getCellData(Integer.parseInt(views), new Color(255, 214, 102, alpha)));
+        } catch (Exception ignore) {
+            ignore.printStackTrace();
+            clValues.add(getCellData(0));
+        }
+
+
+        String dailyViews = "";
+        try {
+            dailyViews = ad.getDailyViews();
+            double coff = (Integer.parseInt(dailyViews) / ((colorData.getMaxDailyViews() - colorData.getMinDailyViews()) / 100.0)) / 100;
+            int alpha = (int) (255 * ( colorData.isEmpty ? 0 : coff ));
+            clValues.add(getCellData(Integer.parseInt(dailyViews), new Color(147, 196, 125, alpha)));
+        } catch (Exception ignore) {
+            clValues.add(getCellData(0));
+        }
+
+        String viewYesterday = "";
+        try {
+            viewYesterday = ad.getViewYesterday();
+            double coff = (Integer.parseInt(viewYesterday) / ((colorData.getMaxViewYesterday() - colorData.getMinViewYesterday()) / 100.0)) / 100;
+            int alpha = (int) (255 * ( colorData.isEmpty ? 0 : coff ));
+            clValues.add(getCellData(Integer.parseInt(viewYesterday), new Color(60, 120, 216, alpha)));
+        } catch (Exception ignore) {
+            clValues.add(getCellData(0));
+        }
+
+
+        if (filters.isDate()) {
+            if (ad.hasStats() != null && ad.hasStats()) {
+
+                try {
+                    String viewsTenDay = ad.getViewsTenDay();
+
+                    double coff = (Integer.parseInt(viewsTenDay) / ((colorData.getMaxViewsTenDay() - colorData.getMinViewsTenDay()) / 100.0)) / 100;
+                    int alpha = (int) (255 * ( colorData.isEmpty ? 0 : coff ));
+                    clValues.add(getCellData(Integer.parseInt(viewsTenDay), new Color(194, 123, 160, alpha)));
+                } catch (Exception ignore) {
+                    clValues.add(getCellData(0));
+                }
+
+                try {
+                    Integer maxTenDay = ad.getMaxTenDay();
+                    double coff = (maxTenDay / ((colorData.getMaxMaxTenDay() - colorData.getMinMaxTenDay()) / 100.0)) / 100;
+                    int alpha = (int) (255 * ( colorData.isEmpty ? 0 : coff ));
+                    clValues.add(getCellData(maxTenDay, new Color(87, 187, 138, alpha)));
+                } catch (Exception ignore) {
+                    clValues.add(getCellData(0));
+                }
+
+                try {
+                    String maxTenDate = ad.getMaxTenDate();
+                    clValues.add(getCellData(maxTenDate));
+                } catch (Exception ignore) {
+                    clValues.add(getCellData(0));
+                }
+
+                try {
+                    String viewsAverageTenDay = ad.getViewsAverageTenDay();
+                    double coff = (Integer.parseInt(viewsAverageTenDay) / ((colorData.getMaxViewsAverageTenDay() - colorData.getMinViewsAverageTenDay()) / 100.0)) / 100;
+                    int alpha = (int) (255 * ( colorData.isEmpty ? 0 : coff ));
+                    clValues.add(getCellData(Integer.parseInt(viewsAverageTenDay), new Color(234, 153, 153, alpha)));
+                } catch (Exception ignore) {
+                    clValues.add(getCellData(0));
+                }
+
+            } else {
+
+                try {
+                    clValues.add(getCellData(Integer.parseInt(ad.getViews())));
+                } catch (Exception ignore) {
+                    clValues.add(getCellData(0));
+                }
+
+                try {
+                    clValues.add(getCellData(Integer.parseInt(ad.getViews())));
+                } catch (Exception e) {
+                    clValues.add(getCellData(0));
+                }
+
+                clValues.add(getCellData(new SimpleDateFormat("yyyy.MM.dd").format(new Date())));
+
+                try {
+                    clValues.add(getCellData(Integer.parseInt(ad.getViews())));
+                } catch (Exception ignore) {
+                    clValues.add(getCellData(0));
+                }
+            }
+        }
+
+
+        String services = "";
+        try {
+            if (ad.getPremium()) {
+                services = services + "1 ";
+            }
+            if (ad.getVip()) {
+                services = services + "2 ";
+            }
+            if (ad.getUrgent()) {
+                services = services + "3 ";
+            }
+            if (ad.getUpped()) {
+                services = services + "4 ";
+            }
+            if (ad.getXL()) {
+                services = services + "5 ";
+            }
+        } catch (Exception ignore) {
+        }
+        clValues.add(getCellData(services));
+
+        String data = "";
+        try {
+            data = ad.getData();
+        } catch (Exception ignore) {
+        }
+        clValues.add(getCellData(data));
+
+
+        if (filters.isDate()) {
+            if (ad.hasStats() != null && ad.hasStats()) {
+
+                String dateApplication = "";
+                try {
+                    dateApplication = ad.getDateApplication();
+                } catch (Exception ignore) {
+                }
+                clValues.add(getCellData(dateApplication));
+
+            } else {
+                clValues.add(getCellData(new SimpleDateFormat("yyyy.MM.dd").format(new Date())));
+
+            }
+        }
+
+        if (filters.isPhoto()) {
+            String numberPictures = "";
+            try {
+                numberPictures = ad.getNumberPictures();
+            } catch (Exception ignore) {
+            }
+            clValues.add(getCellData(numberPictures));
+        }
+
+        if (filters.isDescription()) {
+            String text = "";
+            try {
+                if (offlineMod) {
+                    text = ad.getId();
+                } else {
+                    text = ad.getText();
+                    text = text.trim();
+                }
+            } catch (Exception ignore) {
+            }
+            clValues.add(getCellData(text.replace("\u00A0", " ").trim()));
+        }
+
+        if (filters.isDescriptionLength()) {
+            String quantityText = "";
+            try {
+                quantityText = ad.getQuantityText();
+            } catch (Exception ignore) {
+            }
+            clValues.add(getCellData(quantityText));
+        }
+
+        int delivery = 0;
+        try {
+            if (ad.getDelivery()) ;
+            {
+                delivery = 1;
+            }
+        } catch (Exception ignore) {
+        }
+        clValues.add(getCellData(delivery));
+
+        if (filters.isSellerName()) {
+            String seller = "";
+            try {
+                seller = ad.getSeller();
+            } catch (Exception ignore) {
+            }
+            clValues.add(getCellData(seller));
+        }
+
+        String sellerId = "";
+        try {
+            sellerId = ad.getSellerId();
+            if (ad.getShop()) {
+                int alpha = 255;
+                clValues.add(getCellData(Integer.parseInt(sellerId), new Color(76, 175, 80, alpha)));
+            } else {
+                int alpha = 255;
+                clValues.add(getCellData(Integer.parseInt(sellerId), new Color(33, 150, 243, alpha)));
+            }
+        } catch (Exception ignore) {
+            clValues.add(getCellData(0));
+        }
+
+
+        if (filters.isPhone()) {
+            String phone = "";
+            try {
+                phone = ad.getPhone();
+            } catch (Exception ignore) {
+            }
+            clValues.add(getCellData(phone));
+        }
+
+        String activeAd = "0";
+        try {
+            activeAd = ad.getActiveAd();
+        } catch (Exception ignore) {
+        }
+        clValues.add(getCellData(activeAd));
+
+        String address = "";
+        try {
+            address = ad.getAddress();
+        } catch (Exception ignore) {
+        }
+        clValues.add(getCellData(address));
+
+
+        String url = "";
+        try {
+            url = ad.getUrl();
+        } catch (Exception ignore) {
+        }
+        clValues.add(getCellData(url));
+
+
+        rowVal.setValues(clValues);
+        return rowVal;
+    }
+
+    private static Request createCellSizeRequest(Integer startIndex, Integer endIndex, Integer size) {
+        return new Request().setUpdateDimensionProperties(
+                new UpdateDimensionPropertiesRequest().setRange
+                        (
+                                new DimensionRange()
+                                        .setSheetId(1)
+                                        .setDimension("COLUMNS")
+                                        .setStartIndex(startIndex).setEndIndex(endIndex)
+                        )
+                        .setProperties(new DimensionProperties().setPixelSize(size)).setFields("pixelSize")
+        );
     }
 
     @SuppressWarnings("Duplicates")
@@ -789,15 +765,22 @@ public class SheetsExample {
         return sheet;
     }
 
-    private static Sheet getSortSheet(String title, String formula, ReportFilter filters) {
-        Sheet sheet = new Sheet();
+    private static GridRange generateRange(Integer sheetId, Integer startRowIndex, Integer endRowIndex, Integer startColumnIndex, Integer endColumnIndex) {
+        GridRange gRange = new GridRange();
+        gRange.setSheetId(sheetId);
+        gRange.setStartRowIndex(startRowIndex);
+        gRange.setEndRowIndex(endRowIndex);
+        gRange.setStartColumnIndex(startColumnIndex);
+        gRange.setEndColumnIndex(endColumnIndex);
 
-        SheetProperties sheetProperties = new SheetProperties();
-        sheetProperties.setTitle(title);
-        GridProperties gridProperties = new GridProperties();
-        gridProperties.setFrozenRowCount(1);
-        sheetProperties.setGridProperties(gridProperties);
-        sheet.setProperties(sheetProperties);
+        return gRange;
+    }
+
+    private static Sheet getCompetitorSheet(List<Ad> ads, ReportFilter filters) throws ParseException {
+        Sheet sheet = new Sheet();
+        SheetProperties sheetProp = new SheetProperties();
+        sheetProp.setTitle("Анализ конкурентов");
+        sheet.setProperties(sheetProp);
 
         List<GridData> gData = new ArrayList<>();
         GridData gridData = new GridData();
@@ -805,28 +788,415 @@ public class SheetsExample {
 
         List<RowData> rData = new ArrayList<>();
 
-        // -------------------- SET HEADERS --------------------
-        rData.add(getRowHeaders(filters));
+        // -------------------- COMPETITOR SHEET --------------------
+        List<CompetitorAnalysis> competitors = new ArrayList<>();
+        List<Ad> sortedAds = new ArrayList<>();
 
+        List<String> phones = ads.stream().filter(distinctByKey(Ad::getPhone)).map(Ad::getPhone).collect(Collectors.toList());
+        for (String phone : phones) {
+            List<Ad> allAdsByPhone = ads.stream().filter(ad -> ad.getPhone().equals(phone)).collect(Collectors.toList());
+            if (allAdsByPhone.size() > 1) {
+                competitors.add(new CompetitorAnalysis(allAdsByPhone));
+                sortedAds.addAll(allAdsByPhone);
+            }
+        }
         // -------------------- SET VALUES --------------------
-        RowData rowVal = new RowData();
-        List<CellData> clValues = new ArrayList<>();
 
-        CellData cell = new CellData();
 
-        ExtendedValue exValue = new ExtendedValue();
-        exValue.setFormulaValue(formula);
-        cell.setUserEnteredValue(exValue);
-        clValues.add(cell);
 
-        rowVal.setValues(clValues);
-        rData.add(rowVal);
+        // Сводная таблица
+        Color headerBgColor = new Color(201, 218, 248);
+
+        CellData header = getCellData("Кол-во объяв.", headerBgColor, true);
+        CellData header1 = getCellData("Позиция", headerBgColor, true);
+        CellData header2 = getCellData("Кол-во продвигаемых объяв", headerBgColor, true);
+        CellData header3 = getCellData("Применяемые Методы", headerBgColor, true);
+        CellData header4 = getCellData("Время поднятия", headerBgColor, true);
+        CellData header5 = getCellData("Всего Активных объяв.", headerBgColor, true);
+        CellData header6 = getCellData("Просм. Всего", headerBgColor, true);
+        CellData header7 = getCellData("Просм. Сегодня", headerBgColor, true);
+        CellData header8 = getCellData("Просм. Вчера", headerBgColor, true);
+        CellData header9 = getCellData("Просм. 10 дней", headerBgColor, true);
+        CellData header10 = getCellData("max. Просм. 10дн.", headerBgColor, true);
+        CellData header11 = getCellData("Фото (шт)", headerBgColor, true);
+        CellData header12 = getCellData("Кол-во знаков", headerBgColor, true);
+        CellData header13 = getCellData("Доставка", headerBgColor, true);
+
+        rData.add(new RowData().setValues(Arrays.asList(
+
+        getCellData("№", headerBgColor, true),
+        getCellData("Имя продавца", headerBgColor, true),
+        getCellData("Телефон", headerBgColor, true),
+
+        header.setNote("Количество объявлений в данной выдаче на Авито"),
+        header1.setNote("Среднее значение позиций в выдаче, объявлений данного продавца."),
+        header2.setNote("Количество объявлений, к которым продавец применяет платные услуги , в данной выдаче."),
+        header3.setNote("Все применяемые методы (платные услуги) продавцом, в данной выдаче."),
+        header4.setNote("Дата и время поднятия одного из объявлений, собравшее максимальное кол-во просмотров за сегодняшний день с 00:00 часов до момента парсинга."),
+        header5.setNote("Количество Активных объявлений у данного продавца, размещенных на Авито в той или иной категории."),
+        header6.setNote("Общее количество просмотров на всех объявлениях данного продавца, в данной выдаче."),
+        header7.setNote("Общее количество просмотров на всех объявлениях данного продавца за сегодняшний день, с 00:00 часов до момента парсинга."),
+        header8.setNote("Общее количество просмотров на всех объявлениях данного продавца за весь вчерашний день, с 00:00 до 24:00 часов"),
+        header9.setNote("Общее количество просмотров на всех объявлениях данного продавца за предыдущие 10 дней, включая сегодняшний"),
+        header10.setNote("Максимальное количество просмотров на одном из объявлений, за один из предыдущих 10 дней"),
+        header11.setNote("Среднее количество фотографий размещеных в объявлениях данного продавца"),
+        header12.setNote("Среднее количество знаков (символов) в тексте объявлений данного продавца"),
+        header13.setNote("Количество объявлений с указанием доставки")
+        )));
+        boolean color = false;
+        for (int i = 0; i < competitors.size(); i++) {
+            CompetitorAnalysis competitor = competitors.get(i);
+
+            int adColor;
+            if (color) {
+                adColor = 0;
+                color = false;
+            }
+            else {
+                adColor = 255;
+                color = true;
+            }
+
+
+            rData.add(new RowData().setValues(Arrays.asList(
+                    getCellData(i, new Color(232,240,254, adColor)),
+                    getCellData(competitor.getSellerTitle(), new Color(232,240,254, adColor)),
+                    getCellData(competitor.getPhone(), new Color(232,240,254, adColor)),
+                    getCellData(competitor.getAdCount(), new Color(232,240,254, adColor)),
+                    getCellData(competitor.getPosition(), new Color(232,240,254, adColor)),
+                    getCellData(competitor.getPromAd(), new Color(232,240,254, adColor)),
+                    getCellData(competitor.getPromMethods(), new Color(232,240,254, adColor)),
+                    getCellData(competitor.getMaxViewDate(), new Color(232,240,254, adColor)),
+                    getCellData(competitor.getTotalActiveAd(), new Color(232,240,254, adColor)),
+                    getCellData(competitor.getTotalView(), new Color(232,240,254, adColor)),
+                    getCellData(competitor.getTodayView(), new Color(232,240,254, adColor)),
+                    getCellData(competitor.getYesterdayView(), new Color(232,240,254, adColor)),
+                    getCellData(competitor.getTotalTenDaysView(), new Color(232,240,254, adColor)),
+                    getCellData(competitor.getMaxTenDaysView(), new Color(232,240,254, adColor)),
+                    getCellData(competitor.getPhoto(), new Color(232,240,254, adColor)),
+                    getCellData(competitor.getTextCount(), new Color(232,240,254, adColor))
+            )));
+
+
+
+        }
+
+        filters.setDescription(false);
+        rData.add(getRowHeaders(filters));
+        // Общая таблица
+        for (Ad ad : sortedAds) {
+            RowData rowVal = getRowData(filters, true, ad, new ColorData());
+            if (rowVal == null) continue;
+            rData.add(rowVal);
+        }
+
         // -------------------- SET VALUES ( END ) --------------------
 
         gridData.setRowData(rData);
         sheet.setData(gData);
         return sheet;
     }
+
+    private static Sheet getViewSheet(List<Ad> ads) throws ParseException {
+        Sheet sheet = new Sheet();
+        ViewAnalysis viewAnalysis = new ViewAnalysis(ads);
+        SheetProperties sheetProp = new SheetProperties();
+        sheetProp.setSheetId(1);
+        sheetProp.setTitle("Анализ просмотров");
+        sheet.setProperties(sheetProp);
+
+        List<GridData> gData = new ArrayList<>();
+        GridData gridData = new GridData();
+        gData.add(gridData);
+
+        List<RowData> rData = new ArrayList<>();
+
+        // -------------------- SET VALUES --------------------
+        rData.add(new RowData().setValues(Arrays.asList(
+                getCellData("Кол-во объявлений созданных за 10 дней", new Color(207, 226, 243, 255), true),
+                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                getCellData("Кол-во объявлений поднятых за 10 дней", new Color(207, 226, 243, 255), true),
+                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                getCellData("Всего просмотров за 10 дн. на всех объявлениях", new Color(207, 226, 243, 255), true),
+                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                getCellData("Всего просмотров за 10 дн. на всех объявлениях", new Color(207, 226, 243, 255), true)
+        )));
+
+
+        for (int i = 0; i < 10; i++) {
+            {
+                rData.add(new RowData().setValues(Arrays.asList(
+                        getCellData(viewAnalysis.tenDays.get(i), new Color(232, 246, 239, 255)),
+                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.numOfNewAd[i])),
+                        getCellData(viewAnalysis.tenDays.get(i), new Color(232, 246, 239, 255)),
+                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.numOfUpAd[i])),
+                        new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                        getCellData(viewAnalysis.tenDays.get(i), new Color(232, 246, 239, 255)),
+                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.totalViewOfAd[i])),
+                        getCellData(viewAnalysis.tenDays.get(i), new Color(232, 246, 239, 255)),
+                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.avgViewOfAd[i]))
+                )));
+            }
+        }
+        rData.add(new RowData().setValues(Arrays.asList(
+                getCellData("ВСЕГО:", new Color(239, 239, 239, 255), true),
+                getCellData("=СУММ(B2:B11)", new Color(239, 239, 239, 255)),
+                getCellData("ВСЕГО:", new Color(239, 239, 239, 255), true),
+                getCellData("=СУММ(D2:D11)", new Color(239, 239, 239, 255)),
+                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                getCellData("ВСЕГО:", new Color(239, 239, 239, 255), true),
+                getCellData("=СУММ(G2:G11)", new Color(239, 239, 239, 255)),
+                getCellData("ВСЕГО:", new Color(239, 239, 239, 255), true),
+                getCellData("=СУММ(I2:I11)", new Color(239, 239, 239, 255))
+        )));
+        rData.add(new RowData());
+
+        // За сегодня ( По часам )
+        rData.add(new RowData().setValues(Arrays.asList(
+                getCellData("Сегодня", new Color(0, 0, 0, 0), true),
+                getCellData(viewAnalysis.tenDays.get(0), new Color(0, 0, 0, 0)),
+                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                getCellData("Сегодня", new Color(0, 0, 0, 0), true),
+                getCellData(viewAnalysis.tenDays.get(0), new Color(0, 0, 0, 0))
+        )));
+        rData.add(new RowData().setValues(Arrays.asList(
+                getCellData("Всего просмотров за сегодня на Новых объ-ях", new Color(239, 239, 239, 255), true),
+                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                getCellData("Всего просмотров за сегодня на Поднятых объ-ях", new Color(239, 239, 239, 255), true)
+        )));
+        rData.add(new RowData().setValues(Arrays.asList(
+                getCellData("Часовые интервалы", new Color(207, 226, 243, 255), true),
+                getCellData("Кол-во объявлений", new Color(207, 226, 243, 255), true),
+                getCellData("Кол-во просмотров", new Color(207, 226, 243, 255), true),
+                getCellData("Сред. просмотров", new Color(207, 226, 243, 255), true),
+                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                getCellData("Часовые интервалы", new Color(207, 226, 243, 255), true),
+                getCellData("Кол-во объявлений", new Color(207, 226, 243, 255), true),
+                getCellData("Кол-во просмотров", new Color(207, 226, 243, 255), true),
+                getCellData("Сред. просмотров", new Color(207, 226, 243, 255), true)
+        )));
+
+        for (int i = 0; i < 24; i++) {
+            {
+                if (viewAnalysis.tdayTotalViewOfNewAd[i] != 0 && viewAnalysis.tdayTotalViewOfUpAd[i] != 0) {
+                    rData.add(new RowData().setValues(Arrays.asList(
+                            getCellData(i, new Color(0, 0, 0, 0), true),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.tdayNumOfNewAd[i])),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.tdayTotalViewOfNewAd[i])),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) Math.round(viewAnalysis.tdayTotalViewOfNewAd[i] / (double) viewAnalysis.tdayNumOfNewAd[i]))),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                            getCellData(i, new Color(0, 0, 0, 0), true),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.tdayNumOfUpAd[i])),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.tdayTotalViewOfUpAd[i])),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) Math.round(viewAnalysis.tdayTotalViewOfUpAd[i] / (double) viewAnalysis.tdayNumOfUpAd[i])))
+                    )));
+                } else if (viewAnalysis.tdayTotalViewOfNewAd[i] == 0 && viewAnalysis.tdayTotalViewOfUpAd[i] != 0) {
+                    rData.add(new RowData().setValues(Arrays.asList(
+                            getCellData(i, new Color(0, 0, 0, 0), true),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                            getCellData(i, new Color(0, 0, 0, 0), true),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.tdayNumOfUpAd[i])),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.tdayTotalViewOfUpAd[i])),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) Math.round(viewAnalysis.tdayTotalViewOfUpAd[i] / (double) viewAnalysis.tdayNumOfUpAd[i])))
+                    )));
+                } else if (viewAnalysis.tdayTotalViewOfNewAd[i] != 0 && viewAnalysis.tdayTotalViewOfUpAd[i] == 0) {
+                    rData.add(new RowData().setValues(Arrays.asList(
+                            getCellData(i, new Color(0, 0, 0, 0), true),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.tdayNumOfNewAd[i])),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.tdayTotalViewOfNewAd[i])),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) Math.round(viewAnalysis.tdayTotalViewOfNewAd[i] / (double) viewAnalysis.tdayNumOfNewAd[i]))),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                            getCellData(i, new Color(0, 0, 0, 0), true),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0))
+                    )));
+                } else if (viewAnalysis.tdayTotalViewOfNewAd[i] == 0 && viewAnalysis.tdayTotalViewOfUpAd[i] == 0) {
+                    rData.add(new RowData().setValues(Arrays.asList(
+                            getCellData(i, new Color(0, 0, 0, 0), true),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                            getCellData(i, new Color(0, 0, 0, 0), true),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0))
+                    )));
+                }
+            }
+        }
+        rData.add(new RowData().setValues(Arrays.asList(
+                getCellData("За всё время", new Color(239, 239, 239, 255), true),
+                getCellData("=СУММ(B7:B40)", new Color(239, 239, 239, 255)),
+                getCellData("=СУММ(C7:C40)", new Color(239, 239, 239, 255)),
+                getCellData("=СУММ(D7:D40)", new Color(239, 239, 239, 255)),
+                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                getCellData("За всё время", new Color(239, 239, 239, 255), true),
+                getCellData("=СУММ(G7:G40)", new Color(239, 239, 239, 255)),
+                getCellData("=СУММ(H7:H40)", new Color(239, 239, 239, 255)),
+                getCellData("=СУММ(I7:I40)", new Color(239, 239, 239, 255))
+        )));
+        rData.add(new RowData());
+
+        // За вчера ( По часам )
+        rData.add(new RowData().setValues(Arrays.asList(
+                getCellData("Вчера", new Color(0, 0, 0, 0), true),
+                getCellData(viewAnalysis.tenDays.get(1), new Color(0, 0, 0, 0)),
+                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                getCellData("Вчера", new Color(0, 0, 0, 0), true),
+                getCellData(viewAnalysis.tenDays.get(1), new Color(0, 0, 0, 0))
+        )));
+        rData.add(new RowData().setValues(Arrays.asList(
+                getCellData("Всего просмотров за вчерашний день на Новых объ-ях", new Color(239, 239, 239, 255), true),
+                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                getCellData("Всего просмотров за вчерашний день на Поднятых объ-ях", new Color(239, 239, 239, 255), true)
+        )));
+        rData.add(new RowData().setValues(Arrays.asList(
+                getCellData("Часовые интервалы", new Color(207, 226, 243, 255), true),
+                getCellData("Кол-во объявлений", new Color(207, 226, 243, 255), true),
+                getCellData("Кол-во просмотров", new Color(207, 226, 243, 255), true),
+                getCellData("Сред. просмотров", new Color(207, 226, 243, 255), true),
+                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                getCellData("Часовые интервалы", new Color(207, 226, 243, 255), true),
+                getCellData("Кол-во объявлений", new Color(207, 226, 243, 255), true),
+                getCellData("Кол-во просмотров", new Color(207, 226, 243, 255), true),
+                getCellData("Сред. просмотров", new Color(207, 226, 243, 255), true)
+        )));
+
+        for (int i = 0; i < 24; i++) {
+            {
+                if (viewAnalysis.ydayTotalViewOfNewAd[i] != 0 && viewAnalysis.ydayTotalViewOfUpAd[i] != 0) {
+                    rData.add(new RowData().setValues(Arrays.asList(
+                            getCellData(i, new Color(0, 0, 0, 0), true),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.ydayNumOfNewAd[i])),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.ydayTotalViewOfNewAd[i])),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) Math.round(viewAnalysis.ydayTotalViewOfNewAd[i] / (double) viewAnalysis.ydayNumOfNewAd[i]))),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                            getCellData(i, new Color(0, 0, 0, 0), true),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.ydayNumOfUpAd[i])),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.ydayTotalViewOfUpAd[i])),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) Math.round(viewAnalysis.ydayTotalViewOfUpAd[i] / (double) viewAnalysis.ydayNumOfUpAd[i])))
+                    )));
+                } else if (viewAnalysis.ydayTotalViewOfNewAd[i] == 0 && viewAnalysis.ydayTotalViewOfUpAd[i] != 0) {
+                    rData.add(new RowData().setValues(Arrays.asList(
+                            getCellData(i, new Color(0, 0, 0, 0), true),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                            getCellData(i, new Color(0, 0, 0, 0), true),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.ydayNumOfUpAd[i])),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.ydayTotalViewOfUpAd[i])),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) Math.round(viewAnalysis.ydayTotalViewOfUpAd[i] / (double) viewAnalysis.ydayNumOfUpAd[i])))
+                    )));
+                } else if (viewAnalysis.ydayTotalViewOfNewAd[i] != 0 && viewAnalysis.ydayTotalViewOfUpAd[i] == 0) {
+                    rData.add(new RowData().setValues(Arrays.asList(
+                            getCellData(i, new Color(0, 0, 0, 0), true),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.ydayNumOfNewAd[i])),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.ydayTotalViewOfNewAd[i])),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) Math.round(viewAnalysis.ydayTotalViewOfNewAd[i] / (double) viewAnalysis.ydayNumOfNewAd[i]))),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                            getCellData(i, new Color(0, 0, 0, 0), true),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0))
+                    )));
+                } else if (viewAnalysis.ydayTotalViewOfNewAd[i] == 0 && viewAnalysis.ydayTotalViewOfUpAd[i] == 0) {
+                    rData.add(new RowData().setValues(Arrays.asList(
+                            getCellData(i, new Color(0, 0, 0, 0), true),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                            getCellData(i, new Color(0, 0, 0, 0), true),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0))
+                    )));
+                }
+            }
+        }
+        rData.add(new RowData().setValues(Arrays.asList(
+                getCellData("За всё время", new Color(239, 239, 239, 255), true),
+                getCellData("=СУММ(B46:B69)", new Color(239, 239, 239, 255)),
+                getCellData("=СУММ(C46:C69)", new Color(239, 239, 239, 255)),
+                getCellData("=СУММ(D46:D69)", new Color(239, 239, 239, 255)),
+                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                getCellData("За всё время", new Color(239, 239, 239, 255), true),
+                getCellData("=СУММ(G46:G69)", new Color(239, 239, 239, 255)),
+                getCellData("=СУММ(H46:H69)", new Color(239, 239, 239, 255)),
+                getCellData("=СУММ(I46:I69)", new Color(239, 239, 239, 255))
+        )));
+
+        sheet.setMerges(Arrays.asList(
+                generateRange(1, 0, 1, 0, 2),
+                generateRange(1, 0, 1, 2, 4),
+                generateRange(1, 0, 1, 5, 7),
+                generateRange(1, 0, 1, 7, 9),
+                generateRange(1, 14, 15, 0, 4),
+                generateRange(1, 14, 15, 5, 9)
+        ));
+
+        // -------------------- SET VALUES ( END ) --------------------
+
+        gridData.setRowData(rData);
+        sheet.setData(gData);
+        return sheet;
+    }
+
+//    private static Sheet getSortSheet(String title, String formula, ReportFilter filters) {
+//        Sheet sheet = new Sheet();
+//
+//        SheetProperties sheetProperties = new SheetProperties();
+//        sheetProperties.setTitle(title);
+//        GridProperties gridProperties = new GridProperties();
+//        gridProperties.setFrozenRowCount(1);
+//        sheetProperties.setGridProperties(gridProperties);
+//        sheet.setProperties(sheetProperties);
+//
+//        List<GridData> gData = new ArrayList<>();
+//        GridData gridData = new GridData();
+//        gData.add(gridData);
+//
+//        List<RowData> rData = new ArrayList<>();
+//
+//        // -------------------- SET HEADERS --------------------
+//        rData.add(getRowHeaders(filters));
+//
+//        // -------------------- SET VALUES --------------------
+//        RowData rowVal = new RowData();
+//        List<CellData> clValues = new ArrayList<>();
+//
+//        CellData cell = new CellData();
+//
+//        ExtendedValue exValue = new ExtendedValue();
+//        exValue.setFormulaValue(formula);
+//        cell.setUserEnteredValue(exValue);
+//        clValues.add(cell);
+//
+//        rowVal.setValues(clValues);
+//        rData.add(rowVal);
+//        // -------------------- SET VALUES ( END ) --------------------
+//
+//        gridData.setRowData(rData);
+//        sheet.setData(gData);
+//        return sheet;
+//    }
 
     private static RowData getRowHeaders(ReportFilter filters) {
         RowData rowData = new RowData();
@@ -940,13 +1310,6 @@ public class SheetsExample {
         clHeaders.add(header7);
 
 
-
-
-
-
-
-
-
         rowData.setValues(clHeaders);
         return rowData;
     }
@@ -955,7 +1318,7 @@ public class SheetsExample {
         return getCellData(val, new Color(255, 255, 255));
     }
 
-    private static CellData getCellData(Object val,  java.awt.Color userColor) {
+    private static CellData getCellData(Object val, java.awt.Color userColor) {
         return getCellData(val, userColor, false);
     }
 
@@ -980,8 +1343,14 @@ public class SheetsExample {
         ExtendedValue exValue = new ExtendedValue();
         if (val instanceof Integer) {
             exValue.setNumberValue(Double.valueOf((Integer) val));
+        } else if (val instanceof Double) {
+            exValue.setNumberValue( Math.round((Double) val * 100.0) / 100.0);
         } else if (val instanceof String) {
-            exValue.setStringValue((String) val);
+            String sVal = (String) val;
+            if (sVal.startsWith("="))
+                exValue.setFormulaValue(sVal);
+            else
+                exValue.setStringValue(sVal);
         } else {
             exValue.setStringValue("");
         }
@@ -1038,5 +1407,10 @@ public class SheetsExample {
         return new Sheets.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential)
                 .setApplicationName(APPLICATION_NAME)
                 .build();
+    }
+
+    public static <T> Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor) {
+        Set<Object> seen = ConcurrentHashMap.newKeySet();
+        return t -> seen.add(keyExtractor.apply(t));
     }
 }
