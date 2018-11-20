@@ -93,6 +93,22 @@ public class Ad implements Serializable {
         this.rawStatData = info.getRawData();
     }
 
+    public Boolean getPriceDown() {
+        return isPriceDown;
+    }
+
+    public Boolean getDelivery() {
+        return isDelivery;
+    }
+
+    public Boolean getShop() {
+        return isShop;
+    }
+
+    public String getViewYesterday() {
+        return viewYesterday;
+    }
+
     public TreeMap<String, Integer> getRawStatData() {
         return rawStatData;
     }
