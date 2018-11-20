@@ -21,21 +21,16 @@ public class ViewAnalysis {
     // За сегодня ( По часам )
     int[] tdayNumOfNewAd = new int[24];
     int[] tdayTotalViewOfNewAd = new int[24];
-    int[] tdayAvgViewOfNewAd = new int[24];
 
     int[] tdayNumOfUpAd = new int[24];
     int[] tdayTotalViewOfUpAd = new int[24];
-    int[] tdayAvgViewOfUpAd = new int[24];
 
     // За вчера ( По часам )
     int[] ydayNumOfNewAd = new int[24];
     int[] ydayTotalViewOfNewAd = new int[24];
-    int[] ydayAvgViewOfNewAd = new int[24];
 
     int[] ydayNumOfUpAd = new int[24];
     int[] ydayTotalViewOfUpAd = new int[24];
-    int[] ydayAvgViewOfUpAd = new int[24];
-
 
     public ViewAnalysis(List<Ad> ads) throws ParseException {
 
@@ -53,6 +48,7 @@ public class ViewAnalysis {
         }
 
         for (Ad ad : ads) {
+
             // Количество Новых обьявлений
             int dayOfCreationIndex = tenDays.indexOf(ad.getDateApplication());
             if (dayOfCreationIndex != -1)
@@ -73,22 +69,25 @@ public class ViewAnalysis {
             }
 
             // Формируем почасовые таблицы
-            for (int i = 0; i < 24; i++) {
-                tdayNumOfNewAd[i] = 10;
-                tdayTotalViewOfNewAd[i] = 10;
-                tdayAvgViewOfNewAd[i] = 10;
+            String[] dateTime = ad.getData().split(" ");
+            int hIndex = Integer.parseInt(dateTime[1].split(":")[0]);
+            if (dateTime[0].equals(tenDays.get(0))) {
+                if (ad.getDateApplication() == null || dateTime[0].equals(ad.getDateApplication())) {
+                    tdayNumOfNewAd[hIndex]++;
+                    tdayTotalViewOfNewAd[hIndex] += Integer.parseInt(ad.getDailyViews());
+                } else {
+                    tdayNumOfUpAd[hIndex]++;
+                    tdayTotalViewOfUpAd[hIndex] += Integer.parseInt(ad.getDailyViews());
+                }
 
-                tdayNumOfUpAd[i] = 10;
-                tdayTotalViewOfUpAd[i] = 10;
-                tdayAvgViewOfUpAd[i] = 10;
-
-                ydayNumOfNewAd[i] = 10;
-                ydayTotalViewOfNewAd[i] = 10;
-                ydayAvgViewOfNewAd[i] = 10;
-
-                ydayNumOfUpAd[i] = 10;
-                ydayTotalViewOfUpAd[i] = 10;
-                ydayAvgViewOfUpAd[i] = 10;
+            } else if (dateTime[0].equals(tenDays.get(1)) || ad.getRawStatData().size() > 1) {
+                if (dateTime[0].equals(ad.getDateApplication())) {
+                    ydayNumOfNewAd[hIndex]++;
+                    ydayTotalViewOfNewAd[hIndex] += Integer.parseInt(ad.getViewYesterday());
+                } else {
+                    ydayNumOfUpAd[hIndex]++;
+                    ydayTotalViewOfUpAd[hIndex] = Integer.parseInt(ad.getViewYesterday());
+                }
             }
         }
 
