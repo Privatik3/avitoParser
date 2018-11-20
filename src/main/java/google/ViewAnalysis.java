@@ -18,6 +18,25 @@ public class ViewAnalysis {
     int[] totalViewOfAd = new int[10];
     int[] avgViewOfAd = new int[10];
 
+    // За сегодня ( По часам )
+    int[] tdayNumOfNewAd = new int[24];
+    int[] tdayTotalViewOfNewAd = new int[24];
+    int[] tdayAvgViewOfNewAd = new int[24];
+
+    int[] tdayNumOfUpAd = new int[24];
+    int[] tdayTotalViewOfUpAd = new int[24];
+    int[] tdayAvgViewOfUpAd = new int[24];
+
+    // За вчера ( По часам )
+    int[] ydayNumOfNewAd = new int[24];
+    int[] ydayTotalViewOfNewAd = new int[24];
+    int[] ydayAvgViewOfNewAd = new int[24];
+
+    int[] ydayNumOfUpAd = new int[24];
+    int[] ydayTotalViewOfUpAd = new int[24];
+    int[] ydayAvgViewOfUpAd = new int[24];
+
+
     public ViewAnalysis(List<Ad> ads) throws ParseException {
 
         // Нужно придумать систему генерации даты
@@ -53,6 +72,24 @@ public class ViewAnalysis {
                 }
             }
 
+            // Формируем почасовые таблицы
+            for (int i = 0; i < 24; i++) {
+                tdayNumOfNewAd[i] = 10;
+                tdayTotalViewOfNewAd[i] = 10;
+                tdayAvgViewOfNewAd[i] = 10;
+
+                tdayNumOfUpAd[i] = 10;
+                tdayTotalViewOfUpAd[i] = 10;
+                tdayAvgViewOfUpAd[i] = 10;
+
+                ydayNumOfNewAd[i] = 10;
+                ydayTotalViewOfNewAd[i] = 10;
+                ydayAvgViewOfNewAd[i] = 10;
+
+                ydayNumOfUpAd[i] = 10;
+                ydayTotalViewOfUpAd[i] = 10;
+                ydayAvgViewOfUpAd[i] = 10;
+            }
         }
 
         // Расчитываем среднее всех просмотров, по дням
