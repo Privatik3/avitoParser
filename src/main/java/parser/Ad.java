@@ -1,6 +1,7 @@
 package parser;
 
 import java.io.Serializable;
+import java.util.TreeMap;
 
 public class Ad implements Serializable {
 
@@ -34,6 +35,8 @@ public class Ad implements Serializable {
     private String viewsAverageTenDay;
     private Integer maxTenDay;
     private String maxTenDate;
+
+    private TreeMap<String, Integer> rawStatData = new TreeMap<>();
 
     // Новые элементы
     private Boolean isXL; // +
@@ -85,24 +88,21 @@ public class Ad implements Serializable {
         this.viewsAverageTenDay= info.getViewsAverageTenDay();
         this.maxTenDay = info.getMaxTenDay();
         this.maxTenDate = info.getMaxTenDate();
-
         this.viewYesterday = info.getViewYesterday();
+
+        this.rawStatData = info.getRawData();
+    }
+
+    public TreeMap<String, Integer> getRawStatData() {
+        return rawStatData;
     }
 
     public String getActiveAd() {
         return activeAd;
     }
 
-    public void setActiveAd(String activeAd) {
-        this.activeAd = activeAd;
-    }
-
     public Boolean getXL() {
         return isXL;
-    }
-
-    public void setXL(Boolean XL) {
-        isXL = XL;
     }
 
     public Boolean getHasStats() {
@@ -113,168 +113,77 @@ public class Ad implements Serializable {
         return maxTenDay;
     }
 
-    public void setMaxTenDay(Integer maxTenDay) {
-        this.maxTenDay = maxTenDay;
-    }
-
     public String getMaxTenDate() {
         return maxTenDate;
-    }
-
-    public void setMaxTenDate(String maxTenDate) {
-        this.maxTenDate = maxTenDate;
     }
 
     public Boolean hasStats() {
         return hasStats;
     }
 
-    public void setHasStats(Boolean hasStats) {
-        this.hasStats = hasStats;
-    }
-
     public String getPhone() {
         return phone;
-    }
-
-    public void setPhone(String phone) {
-        this.phone = phone;
     }
 
     public String getDateApplication() {
         return dateApplication;
     }
 
-    public void setDateApplication(String dateApplication) {
-        this.dateApplication = dateApplication;
-    }
-
     public String getViewsTenDay() {
         return viewsTenDay;
-    }
-
-    public void setViewsTenDay(String viewsTenDay) {
-        this.viewsTenDay = viewsTenDay;
     }
 
     public String getViewsAverageTenDay() {
         return viewsAverageTenDay;
     }
 
-    public void setViewsAverageTenDay(String viewsAverageTenDay) {
-        this.viewsAverageTenDay = viewsAverageTenDay;
-    }
-
     public Integer getPosition() {
         return position;
-    }
-
-    public void setPosition(Integer position) {
-        this.position = position;
-    }
-
-    public Boolean getOnlyUpped() {
-        return isOnlyUpped;
-    }
-
-    public void setOnlyUpped(Boolean onlyUpped) {
-        isOnlyUpped = onlyUpped;
-    }
-
-    public Boolean getLessTwoVAS() {
-        return isLessTwoVAS;
-    }
-
-    public void setLessTwoVAS(Boolean lessTwoVAS) {
-        isLessTwoVAS = lessTwoVAS;
     }
 
     public Boolean getPremium() {
         return isPremium;
     }
 
-    public void setPremium(Boolean premium) {
-        isPremium = premium;
-    }
-
     public Boolean getVip() {
         return isVip;
-    }
-
-    public void setVip(Boolean vip) {
-        isVip = vip;
     }
 
     public Boolean getUrgent() {
         return isUrgent;
     }
 
-    public void setUrgent(Boolean urgent) {
-        isUrgent = urgent;
-    }
-
     public Boolean getUpped() {
         return isUpped;
-    }
-
-    public void setUpped(Boolean upped) {
-        isUpped = upped;
     }
 
     public String getTitle() {
         return title;
     }
 
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
     public String getPrice() {
         return price;
     }
 
-    public void setPrice(String price) {
-        this.price = price;
-    }
 
     public String getViews() {
         return views;
-    }
-
-    public void setViews(String views) {
-        this.views = views;
     }
 
     public String getDailyViews() {
         return dailyViews;
     }
 
-    public void setDailyViews(String dailyViews) {
-        this.dailyViews = dailyViews;
-    }
-
     public String getAddress() {
         return address;
-    }
-
-    public void setAddress(String address) {
-        this.address = address;
     }
 
     public String getData() {
         return data;
     }
 
-    public void setData(String data) {
-        this.data = data;
-    }
-
     public String getNumberPictures() {
         return numberPictures;
-    }
-
-    public void setNumberPictures(String numberPictures) {
-        this.numberPictures = numberPictures;
     }
 
     public String getText() {
@@ -289,24 +198,12 @@ public class Ad implements Serializable {
         return quantityText;
     }
 
-    public void setQuantityText(String quantityText) {
-        this.quantityText = quantityText;
-    }
-
     public String getSeller() {
         return seller;
     }
 
-    public void setSeller(String seller) {
-        this.seller = seller;
-    }
-
     public String getSellerId() {
         return sellerId;
-    }
-
-    public void setSellerId(String sellerId) {
-        this.sellerId = sellerId;
     }
 
     public String getId() {

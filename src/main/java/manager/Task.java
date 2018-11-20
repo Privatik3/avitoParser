@@ -264,7 +264,7 @@ public class Task {
                 FileOutputStream fOut = new FileOutputStream(new File("filterBackUp.txt"));
                 ObjectOutputStream fObg = new ObjectOutputStream(fOut);
                 fObg.writeObject(reportFilter);
-                return;
+                System.exit(0);
             } else {
                 this.resultLink = SheetsExample.generateSheet(title, result, reportFilter);
             }

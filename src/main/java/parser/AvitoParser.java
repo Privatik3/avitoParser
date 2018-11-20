@@ -302,6 +302,61 @@ public class AvitoParser {
         return result;
     }
 
+
+    private static String convertDate(String date) {
+
+        String result = "";
+        try {
+            String day = date.split(" ")[0];
+            if (day.length() <= 1) {
+                day = "0" + day;
+            }
+            String monthData = date.split(" ")[1];
+            String year = date.split(" ")[2];
+            switch (monthData) {
+                case "января":
+                    monthData = "01";
+                    break;
+                case "февраля":
+                    monthData = "02";
+                    break;
+                case "марта":
+                    monthData = "03";
+                    break;
+                case "апреля":
+                    monthData = "04";
+                    break;
+                case "мая":
+                    monthData = "05";
+                    break;
+                case "июня":
+                    monthData = "06";
+                    break;
+                case "июля":
+                    monthData = "07";
+                    break;
+                case "августа":
+                    monthData = "08";
+                    break;
+                case "сентября":
+                    monthData = "09";
+                    break;
+                case "октября":
+                    monthData = "10";
+                    break;
+                case "ноября":
+                    monthData = "11";
+                    break;
+                case "декабря":
+                    monthData = "12";
+                    break;
+            }
+            result = year + "." + monthData + "." + day;
+        } catch (Exception ignored) { }
+
+        return result;
+    }
+
     public static List<StatInfo> parseStats(List<RequestTask> tasks) {
 
         log.info("-------------------------------------------------");
@@ -320,58 +375,24 @@ public class AvitoParser {
             String dateApplication = "";
             try {
                 dateApplication = doc.select("div.item-stats__date strong").text();
-                String day = dateApplication.split(" ")[0];
-                if (day.length() <= 1) {
-                    day = "0" + day;
-                }
-                String monthData = dateApplication.split(" ")[1];
-                String year = dateApplication.split(" ")[2];
-                switch (monthData) {
-                    case "января":
-                        monthData = "01";
-                        break;
-                    case "февраля":
-                        monthData = "02";
-                        break;
-                    case "марта":
-                        monthData = "03";
-                        break;
-                    case "апреля":
-                        monthData = "04";
-                        break;
-                    case "мая":
-                        monthData = "05";
-                        break;
-                    case "июня":
-                        monthData = "06";
-                        break;
-                    case "июля":
-                        monthData = "07";
-                        break;
-                    case "августа":
-                        monthData = "08";
-                        break;
-                    case "сентября":
-                        monthData = "09";
-                        break;
-                    case "октября":
-                        monthData = "10";
-                        break;
-                    case "ноября":
-                        monthData = "11";
-                        break;
-                    case "декабря":
-                        monthData = "12";
-                        break;
-                }
-                dateApplication = year + "." + monthData + "." + day;
-            } catch (Exception ignored) {
-            }
-            item.setDateApplication(dateApplication);
+            } catch (Exception ignored) {}
+            item.setDateApplication(convertDate(dateApplication));
 
             // Стата просмотров хранится в json ( небольшая помощь )
             String json = doc.select("div.item-stats__chart").attr("data-chart");
             JSONObject chart = new JSONObject(json);
+
+            JSONArray statViews = chart.getJSONArray("columns").getJSONArray(1);
+            JSONArray dates = chart.getJSONArray("dates");
+
+            TreeMap<String, Integer> rawData = new TreeMap<>(Collections.reverseOrder());
+            for (int i = dates.length() - 1; i > 0 && rawData.size() < 10; i--) {
+                String date = convertDate(dates.getString(i));
+                if (!date.isEmpty())
+                    rawData.put(date, statViews.getInt(i));
+            }
+            item.setRawData(rawData);
+
 
             int viewsTenDayArray = 0;
             String viewsTenDay = "0";

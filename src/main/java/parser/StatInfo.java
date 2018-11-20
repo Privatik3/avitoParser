@@ -1,5 +1,8 @@
 package parser;
 
+import java.util.HashMap;
+import java.util.TreeMap;
+
 public class StatInfo {
 
     private String id;
@@ -8,8 +11,17 @@ public class StatInfo {
     private String viewsAverageTenDay;
     private Integer maxTenDay;
     private String maxTenDate;
-
     private String viewYesterday = "0";
+
+    private TreeMap<String, Integer> rawData = new TreeMap<>();
+
+    public TreeMap<String, Integer> getRawData() {
+        return rawData;
+    }
+
+    public void setRawData(TreeMap<String, Integer> rawData) {
+        this.rawData = rawData;
+    }
 
     public String getViewYesterday() {
         return viewYesterday;
