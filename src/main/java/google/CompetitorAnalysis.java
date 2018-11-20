@@ -3,6 +3,8 @@ package google;
 import parser.Ad;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 public class CompetitorAnalysis {
 
@@ -25,7 +27,45 @@ public class CompetitorAnalysis {
 
     public CompetitorAnalysis(List<Ad> sellerAds) {
 
+        this.adCount = sellerAds.size();
+        this.phone = sellerAds.get(0).getPhone();
+        this.sellerTitle = sellerAds.get(0).getTitle();
+        this.totalActiveAd = Integer.parseInt(sellerAds.get(0).getActiveAd());
 
+        String today = "########";
+        Optional<Ad> any = sellerAds.stream().filter(ad -> ad.getRawStatData().size() > 0).findAny();
+        if (any.isPresent())
+            today = any.get().getRawStatData().firstKey();
+
+        int maxView = 0;
+        for (Ad ad : sellerAds) {
+            this.position += ad.getPosition();
+            this.photo += Integer.parseInt(ad.getPhone());
+            this.textCount += Integer.parseInt(ad.getQuantityText());
+            this.delivery += ad.getDelivery() ? 1 : 0;
+
+            if (ad.getVip() || ad.getPremium() || ad.getXL() || ad.getUpped() || ad.getUrgent() ) {
+                this.promAd++;
+            }
+
+            int dailyView = Integer.parseInt(ad.getDailyViews());
+            if (ad.getData().contains(today) && maxView < dailyView) {
+                maxView = dailyView;
+                maxViewDate = ad.getData();
+            }
+
+            this.totalView += Integer.parseInt(ad.getViews());
+            this.todayView += Integer.parseInt(ad.getDailyViews());
+            this.yesterdayView += Integer.parseInt(ad.getViewYesterday());
+
+            for (Map.Entry<String, Integer> day : ad.getRawStatData().entrySet()) {
+                this.totalTenDaysView += day.getValue();
+                this.maxTenDaysView = maxTenDaysView < day.getValue() ? day.getValue() : maxTenDaysView;
+            }
+        }
+
+        this.photo = this.photo / adCount;
+        this.position = this.position / adCount;
     }
 
     public String getSellerTitle() {
