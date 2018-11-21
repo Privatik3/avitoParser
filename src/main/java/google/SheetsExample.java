@@ -187,46 +187,50 @@ public class SheetsExample {
             } else {
                 if (filters.isDate()) {
                     try {
-                        List<Request> requests = new ArrayList<>();
-                        requests.add(createCellSizeRequest(0, 4, 150));
-                        requests.add(createCellSizeRequest(4, 5, 20));
-                        requests.add(createCellSizeRequest(5, 9, 150));
+//                        List<Request> requests = new ArrayList<>();
+//                        requests.add(createCellSizeRequest(0, 4, 150));
+//                        requests.add(createCellSizeRequest(4, 5, 20));
+//                        requests.add(createCellSizeRequest(5, 9, 150));
 
-//                        int reqSize = filters.isDescription() ? 2000 : 4000;
-                        int reqSize = 500;
-                        int check = 1;
+
+                        int reqSize = 6000;
+
+                        int fail = 1;
                         List<RowData> tmpData = new ArrayList<>(reqSize + 1);
                         Iterator<RowData> rIter = rData.iterator();
-                        while (rIter.hasNext()) {
-                            if (tmpData.size() > reqSize) {
+                        while (true) {
+                            if (tmpData.size() > reqSize || !rIter.hasNext()) {
+                                if (tmpData.size() == 0)
+                                    break;
+
+                                List<Request> requests = new ArrayList<>();
                                 requests.add(new Request().setAppendCells(new AppendCellsRequest().setSheetId(0).setFields("*").setRows(tmpData)));
                                 BatchUpdateSpreadsheetRequest body = new BatchUpdateSpreadsheetRequest().setRequests(requests);
 
                                 try {
                                     sheetsService.spreadsheets().batchUpdate(response.getSpreadsheetId(), body).execute();
+
+                                    Thread.sleep(500);
+                                    tmpData.clear();
                                 } catch (Exception e) {
                                     e.printStackTrace();
-                                    break;
-                                } finally {
-                                    System.out.println(check++);
-                                }
 
-                                Thread.sleep(250);
-                                tmpData.clear();
-                                request.clear();
+                                    if (fail++ > 3)
+                                        break;
+
+                                    rData.addAll(tmpData);
+                                    tmpData.clear();
+
+                                    reqSize /= 2;
+                                    rIter = rData.iterator();
+                                } finally {
+                                    System.out.println(fail);
+                                }
                             } else {
                                 tmpData.add(rIter.next());
                                 rIter.remove();
                             }
                         }
-
-//                        requests.add(new Request().setAppendCells(new AppendCellsRequest().setSheetId(0).setFields("*").setRows(tmpData)));
-//                        BatchUpdateSpreadsheetRequest body = new BatchUpdateSpreadsheetRequest().setRequests(requests);
-//
-//                        sheetsService.spreadsheets().batchUpdate(response.getSpreadsheetId(), body).execute();
-
-                        tmpData.clear();
-                        request.clear();
                     } catch (Exception ignore) {
                         ignore.printStackTrace();
                     }
@@ -294,9 +298,14 @@ public class SheetsExample {
             views = ad.getViews();
 
             double coff = (Integer.parseInt(views) / ((colorData.getMaxViews() - colorData.getMinViews()) / 100.0)) / 100;
-            int alpha = (int) (255 * (colorData.isEmpty ? 0 : coff));
 
-            clValues.add(getCellData(Integer.parseInt(views), new Color(255, 214, 102, alpha)));
+            if (colorData.getMaxViews()*0.15 < Integer.parseInt(views)) {
+                int alpha = (int) (255 * (colorData.isEmpty ? 0 : coff));
+                clValues.add(getCellData(Integer.parseInt(views), new Color(255, 214, 102, alpha)));
+            } else {
+                clValues.add(getCellData(Integer.parseInt(views)));
+            }
+
         } catch (Exception ignore) {
             ignore.printStackTrace();
             clValues.add(getCellData(0));
@@ -307,8 +316,15 @@ public class SheetsExample {
         try {
             dailyViews = ad.getDailyViews();
             double coff = (Integer.parseInt(dailyViews) / ((colorData.getMaxDailyViews() - colorData.getMinDailyViews()) / 100.0)) / 100;
-            int alpha = (int) (255 * (colorData.isEmpty ? 0 : coff));
-            clValues.add(getCellData(Integer.parseInt(dailyViews), new Color(147, 196, 125, alpha)));
+
+            if (colorData.getMaxDailyViews()*0.15 < Integer.parseInt(dailyViews)) {
+                int alpha = (int) (255 * (colorData.isEmpty ? 0 : coff));
+                clValues.add(getCellData(Integer.parseInt(dailyViews), new Color(147, 196, 125, alpha)));
+            } else {
+                clValues.add(getCellData(Integer.parseInt(dailyViews)));
+            }
+
+
         } catch (Exception ignore) {
             clValues.add(getCellData(0));
         }
@@ -317,8 +333,15 @@ public class SheetsExample {
         try {
             viewYesterday = ad.getViewYesterday();
             double coff = (Integer.parseInt(viewYesterday) / ((colorData.getMaxViewYesterday() - colorData.getMinViewYesterday()) / 100.0)) / 100;
-            int alpha = (int) (255 * (colorData.isEmpty ? 0 : coff));
-            clValues.add(getCellData(Integer.parseInt(viewYesterday), new Color(60, 120, 216, alpha)));
+
+            if (colorData.getMaxViewYesterday()*0.15 < Integer.parseInt(viewYesterday)) {
+                int alpha = (int) (255 * (colorData.isEmpty ? 0 : coff));
+                clValues.add(getCellData(Integer.parseInt(viewYesterday), new Color(60, 120, 216, alpha)));
+            } else {
+                clValues.add(getCellData(Integer.parseInt(viewYesterday)));
+            }
+
+
         } catch (Exception ignore) {
             clValues.add(getCellData(0));
         }
@@ -331,8 +354,15 @@ public class SheetsExample {
                     String viewsTenDay = ad.getViewsTenDay();
 
                     double coff = (Integer.parseInt(viewsTenDay) / ((colorData.getMaxViewsTenDay() - colorData.getMinViewsTenDay()) / 100.0)) / 100;
-                    int alpha = (int) (255 * (colorData.isEmpty ? 0 : coff));
-                    clValues.add(getCellData(Integer.parseInt(viewsTenDay), new Color(194, 123, 160, alpha)));
+
+                    if (colorData.getMaxViewsTenDay()*0.15 < Integer.parseInt(viewsTenDay)) {
+                        int alpha = (int) (255 * (colorData.isEmpty ? 0 : coff));
+                        clValues.add(getCellData(Integer.parseInt(viewsTenDay), new Color(194, 123, 160, alpha)));
+                    } else {
+                        clValues.add(getCellData(Integer.parseInt(viewsTenDay)));
+                    }
+
+
                 } catch (Exception ignore) {
                     clValues.add(getCellData(0));
                 }
@@ -340,8 +370,15 @@ public class SheetsExample {
                 try {
                     Integer maxTenDay = ad.getMaxTenDay();
                     double coff = (maxTenDay / ((colorData.getMaxMaxTenDay() - colorData.getMinMaxTenDay()) / 100.0)) / 100;
-                    int alpha = (int) (255 * (colorData.isEmpty ? 0 : coff));
-                    clValues.add(getCellData(maxTenDay, new Color(87, 187, 138, alpha)));
+
+                    if (colorData.getMaxMaxTenDay()*0.15 < maxTenDay) {
+                        int alpha = (int) (255 * (colorData.isEmpty ? 0 : coff));
+                        clValues.add(getCellData(maxTenDay, new Color(87, 187, 138, alpha)));
+                    } else {
+                        clValues.add(getCellData(maxTenDay));
+                    }
+
+
                 } catch (Exception ignore) {
                     clValues.add(getCellData(0));
                 }
@@ -356,8 +393,15 @@ public class SheetsExample {
                 try {
                     String viewsAverageTenDay = ad.getViewsAverageTenDay();
                     double coff = (Integer.parseInt(viewsAverageTenDay) / ((colorData.getMaxViewsAverageTenDay() - colorData.getMinViewsAverageTenDay()) / 100.0)) / 100;
-                    int alpha = (int) (255 * (colorData.isEmpty ? 0 : coff));
-                    clValues.add(getCellData(Integer.parseInt(viewsAverageTenDay), new Color(234, 153, 153, alpha)));
+
+                    if (colorData.getMaxViewsAverageTenDay()*0.15 < Integer.parseInt(viewsAverageTenDay)) {
+                        int alpha = (int) (255 * (colorData.isEmpty ? 0 : coff));
+                        clValues.add(getCellData(Integer.parseInt(viewsAverageTenDay), new Color(234, 153, 153, alpha)));
+                    } else {
+                        clValues.add(getCellData(Integer.parseInt(viewsAverageTenDay)));
+                    }
+
+
                 } catch (Exception ignore) {
                     clValues.add(getCellData(0));
                 }
@@ -1457,7 +1501,9 @@ public class SheetsExample {
         if (isBold)
             format.setTextFormat(new TextFormat().setBold(true));
 
-        if (userColor.getRGB() < -70000)
+
+//        System.out.println(userColor.getRGB());
+        if (userColor.getRGB() != -1)
             cell.setUserEnteredFormat(format);
 
         ExtendedValue exValue = new ExtendedValue();
