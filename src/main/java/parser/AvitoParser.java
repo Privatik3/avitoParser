@@ -9,6 +9,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.net.URLDecoder;
+import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Logger;
@@ -46,7 +47,8 @@ public class AvitoParser {
                         Integer.parseInt(tmpID);
                         id = tmpID;
                     }
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
                 item.setId(id);
 
                 String finalId = id;
@@ -66,19 +68,22 @@ public class AvitoParser {
                 boolean isXL = false;
                 try {
                     isXL = el.is("div[data-is-xl]");
-                } catch (Exception ignore) {}
+                } catch (Exception ignore) {
+                }
                 item.setXL(isXL);
 
                 boolean isDelivery = false;
                 try {
                     isDelivery = el.select("div.catalog-delivery").size() > 0;
-                } catch (Exception ignore) {}
+                } catch (Exception ignore) {
+                }
                 item.setDelivery(isDelivery);
 
                 boolean isPriceDown = false;
                 try {
                     isPriceDown = el.select("span.price-lower").size() > 0;
-                } catch (Exception ignore) {}
+                } catch (Exception ignore) {
+                }
                 item.setPriceDown(isPriceDown);
 
                 boolean isOnlyUpped = false;
@@ -208,7 +213,8 @@ public class AvitoParser {
             try {
                 try {
                     address = ob.getJSONObject("item").getJSONObject("item").getString("address");
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
 
                 if (address.isEmpty()) {
                     JSONObject locations = ob.getJSONObject("item").getJSONObject("item").getJSONObject("refs").getJSONObject("locations");
@@ -219,7 +225,8 @@ public class AvitoParser {
                     for (String key : metro.keySet())
                         address += "м. " + metro.getJSONObject(key).getString("name") + ", ";
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
             item.setAddress(address.endsWith(", ") ? address.substring(0, address.length() - 2) : address);
 
             String dataNew = "";
@@ -259,22 +266,24 @@ public class AvitoParser {
             try {
                 activeAd = ob.getJSONObject("item").getJSONObject("item").getJSONObject("seller").getString("summary");
                 activeAd = activeAd.replaceAll("\\s.*", "");
-            } catch (Exception ignored) { }
+            } catch (Exception ignored) {
+            }
             item.setActiveAd(activeAd);
 
             Boolean isShop = false;
             try {
                 String adOwner = ob.getJSONObject("item").getJSONObject("item").getJSONObject("seller").getString("postfix");
                 isShop = !adOwner.toLowerCase().contains("частное");
-            } catch (Exception ignored) { }
-            item.setShop(isShop);
-
-            int sellerId = 0;
-            try {
-                sellerId = ob.getJSONObject("item").getJSONObject("item").getInt("id");
             } catch (Exception ignored) {
             }
-            item.setSellerId(String.valueOf(sellerId));
+            item.setShop(isShop);
+
+            String sellerId = "";
+            try {
+                sellerId = ob.getJSONObject("item").getJSONObject("item").getJSONObject("seller").getString("link");
+                sellerId = sellerId.substring(0, sellerId.indexOf("&"));
+            } catch (Exception ignored) {}
+            item.setSellerId(sellerId);
 
             String phone = "";
             try {
@@ -352,7 +361,8 @@ public class AvitoParser {
                     break;
             }
             result = year + "." + monthData + "." + day;
-        } catch (Exception ignored) { }
+        } catch (Exception ignored) {
+        }
 
         return result;
     }
@@ -375,7 +385,8 @@ public class AvitoParser {
             String dateApplication = "";
             try {
                 dateApplication = doc.select("div.item-stats__date strong").text();
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
             item.setDateApplication(convertDate(dateApplication));
 
             // Стата просмотров хранится в json ( небольшая помощь )
@@ -412,7 +423,7 @@ public class AvitoParser {
                     viewsTenDayArray = viewsTenDayArray + viewsTenDayTest;
                     if (maxTenDayInt < viewsTenDayTest) {
                         maxTenDayInt = viewsTenDayTest;
-                            maxTenDate = new SimpleDateFormat("yyyy.MM.dd").format((new Date().getTime() - timeData));
+                        maxTenDate = new SimpleDateFormat("yyyy.MM.dd").format((new Date().getTime() - timeData));
                     }
                     timeData = timeData + 86400000;
                 }

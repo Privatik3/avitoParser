@@ -428,8 +428,7 @@ public class SheetsExample {
 
         int delivery = 0;
         try {
-            if (ad.getDelivery()) ;
-            {
+            if (ad.getDelivery()) {
                 delivery = 1;
             }
         } catch (Exception ignore) {
@@ -447,13 +446,12 @@ public class SheetsExample {
 
         String sellerId = "";
         try {
-            sellerId = ad.getSellerId();
+            sellerId = ad.getSellerId().substring(ad.getSellerId().indexOf("=") + 1);
+            int alpha = 255;
             if (ad.getShop()) {
-                int alpha = 255;
-                clValues.add(getCellData(Integer.parseInt(sellerId), new Color(76, 175, 80, alpha)));
+                clValues.add(getCellData(sellerId, new Color(252, 232, 178, alpha)));
             } else {
-                int alpha = 255;
-                clValues.add(getCellData(Integer.parseInt(sellerId), new Color(33, 150, 243, alpha)));
+                clValues.add(getCellData(sellerId, new Color(255, 255, 255, alpha)));
             }
         } catch (Exception ignore) {
             clValues.add(getCellData(0));
@@ -672,6 +670,12 @@ public class SheetsExample {
 
         rData.add(new RowData().setValues(Arrays.asList(
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("Методы продвижения:")),
+                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("5 - XL")),
+                new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=СЧЁТЕСЛИМН('Объявления'!E2:E20000;\"*5*\")"))
+        )));
+
+        rData.add(new RowData().setValues(Arrays.asList(
+                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("4 - Поднятие")),
                 new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=СЧЁТЕСЛИМН('Объявления'!E2:E20000;\"*4*\")"))
         )));
@@ -874,12 +878,17 @@ public class SheetsExample {
                     getCellData(competitor.getTotalTenDaysView(), new Color(232,240,254, adColor)),
                     getCellData(competitor.getMaxTenDaysView(), new Color(232,240,254, adColor)),
                     getCellData(competitor.getPhoto(), new Color(232,240,254, adColor)),
-                    getCellData(competitor.getTextCount(), new Color(232,240,254, adColor))
+                    getCellData(competitor.getTextCount(), new Color(232,240,254, adColor)),
+                    getCellData(competitor.getDelivery(), new Color(232,240,254, adColor))
             )));
 
 
 
         }
+
+        // Костыль на пустую строку
+        rData.add(new RowData().setValues(Collections.singletonList(getCellData(""))));
+        rData.add(new RowData().setValues(Collections.singletonList(getCellData(""))));
 
         filters.setDescription(false);
         rData.add(getRowHeaders(filters));
