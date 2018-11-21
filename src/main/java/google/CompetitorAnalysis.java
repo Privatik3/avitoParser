@@ -2,6 +2,7 @@ package google;
 
 import parser.Ad;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -38,6 +39,7 @@ public class CompetitorAnalysis {
             today = any.get().getRawStatData().firstKey();
 
         int maxView = 0;
+        HashSet<String> methods = new HashSet<>();
         for (Ad ad : sellerAds) {
             this.position += ad.getPosition();
             this.photo += Integer.parseInt(ad.getNumberPictures());
@@ -46,6 +48,22 @@ public class CompetitorAnalysis {
 
             if (ad.getVip() || ad.getPremium() || ad.getXL() || ad.getUpped() || ad.getUrgent() ) {
                 this.promAd++;
+            }
+
+            if (ad.getPremium()) {
+                methods.add("1");
+            }
+            if (ad.getVip()) {
+                methods.add("2");
+            }
+            if (ad.getUrgent()) {
+                methods.add("3");
+            }
+            if (ad.getUpped()) {
+                methods.add("4");
+            }
+            if (ad.getXL()) {
+                methods.add("5");
             }
 
             int dailyView = Integer.parseInt(ad.getDailyViews());
@@ -62,6 +80,10 @@ public class CompetitorAnalysis {
                 this.totalTenDaysView += day.getValue();
                 this.maxTenDaysView = maxTenDaysView < day.getValue() ? day.getValue() : maxTenDaysView;
             }
+        }
+
+        for (String method : methods) {
+            this.promMethods += method + " ";
         }
 
         this.photo = this.photo / adCount;

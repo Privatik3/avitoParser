@@ -193,9 +193,8 @@ public class SheetsExample {
 //                        requests.add(createCellSizeRequest(5, 9, 150));
 
 
-                        int reqSize = 6000;
-
-                        int fail = 1;
+                        boolean cellSize = true;
+                        int reqSize = 6000, fail = 1;
                         List<RowData> tmpData = new ArrayList<>(reqSize + 1);
                         Iterator<RowData> rIter = rData.iterator();
                         while (true) {
@@ -204,13 +203,20 @@ public class SheetsExample {
                                     break;
 
                                 List<Request> requests = new ArrayList<>();
+                                if (cellSize) {
+                                    requests.add(createCellSizeRequest(0, 4, 150));
+                                    requests.add(createCellSizeRequest(4, 5, 20));
+                                    requests.add(createCellSizeRequest(5, 9, 150));
+                                }
+
                                 requests.add(new Request().setAppendCells(new AppendCellsRequest().setSheetId(0).setFields("*").setRows(tmpData)));
                                 BatchUpdateSpreadsheetRequest body = new BatchUpdateSpreadsheetRequest().setRequests(requests);
 
                                 try {
                                     sheetsService.spreadsheets().batchUpdate(response.getSpreadsheetId(), body).execute();
-
                                     Thread.sleep(500);
+
+                                    cellSize = false;
                                     tmpData.clear();
                                 } catch (Exception e) {
                                     e.printStackTrace();
@@ -218,7 +224,7 @@ public class SheetsExample {
                                     if (fail++ > 3)
                                         break;
 
-                                    rData.addAll(tmpData);
+                                    rData.addAll(0, tmpData);
                                     tmpData.clear();
 
                                     reqSize /= 2;
@@ -299,7 +305,7 @@ public class SheetsExample {
 
             double coff = (Integer.parseInt(views) / ((colorData.getMaxViews() - colorData.getMinViews()) / 100.0)) / 100;
 
-            if (colorData.getMaxViews()*0.15 < Integer.parseInt(views)) {
+            if (colorData.getMaxViews() * 0.15 < Integer.parseInt(views)) {
                 int alpha = (int) (255 * (colorData.isEmpty ? 0 : coff));
                 clValues.add(getCellData(Integer.parseInt(views), new Color(255, 214, 102, alpha)));
             } else {
@@ -317,7 +323,7 @@ public class SheetsExample {
             dailyViews = ad.getDailyViews();
             double coff = (Integer.parseInt(dailyViews) / ((colorData.getMaxDailyViews() - colorData.getMinDailyViews()) / 100.0)) / 100;
 
-            if (colorData.getMaxDailyViews()*0.15 < Integer.parseInt(dailyViews)) {
+            if (colorData.getMaxDailyViews() * 0.15 < Integer.parseInt(dailyViews)) {
                 int alpha = (int) (255 * (colorData.isEmpty ? 0 : coff));
                 clValues.add(getCellData(Integer.parseInt(dailyViews), new Color(147, 196, 125, alpha)));
             } else {
@@ -334,7 +340,7 @@ public class SheetsExample {
             viewYesterday = ad.getViewYesterday();
             double coff = (Integer.parseInt(viewYesterday) / ((colorData.getMaxViewYesterday() - colorData.getMinViewYesterday()) / 100.0)) / 100;
 
-            if (colorData.getMaxViewYesterday()*0.15 < Integer.parseInt(viewYesterday)) {
+            if (colorData.getMaxViewYesterday() * 0.15 < Integer.parseInt(viewYesterday)) {
                 int alpha = (int) (255 * (colorData.isEmpty ? 0 : coff));
                 clValues.add(getCellData(Integer.parseInt(viewYesterday), new Color(60, 120, 216, alpha)));
             } else {
@@ -355,7 +361,7 @@ public class SheetsExample {
 
                     double coff = (Integer.parseInt(viewsTenDay) / ((colorData.getMaxViewsTenDay() - colorData.getMinViewsTenDay()) / 100.0)) / 100;
 
-                    if (colorData.getMaxViewsTenDay()*0.15 < Integer.parseInt(viewsTenDay)) {
+                    if (colorData.getMaxViewsTenDay() * 0.15 < Integer.parseInt(viewsTenDay)) {
                         int alpha = (int) (255 * (colorData.isEmpty ? 0 : coff));
                         clValues.add(getCellData(Integer.parseInt(viewsTenDay), new Color(194, 123, 160, alpha)));
                     } else {
@@ -371,7 +377,7 @@ public class SheetsExample {
                     Integer maxTenDay = ad.getMaxTenDay();
                     double coff = (maxTenDay / ((colorData.getMaxMaxTenDay() - colorData.getMinMaxTenDay()) / 100.0)) / 100;
 
-                    if (colorData.getMaxMaxTenDay()*0.15 < maxTenDay) {
+                    if (colorData.getMaxMaxTenDay() * 0.15 < maxTenDay) {
                         int alpha = (int) (255 * (colorData.isEmpty ? 0 : coff));
                         clValues.add(getCellData(maxTenDay, new Color(87, 187, 138, alpha)));
                     } else {
@@ -394,7 +400,7 @@ public class SheetsExample {
                     String viewsAverageTenDay = ad.getViewsAverageTenDay();
                     double coff = (Integer.parseInt(viewsAverageTenDay) / ((colorData.getMaxViewsAverageTenDay() - colorData.getMinViewsAverageTenDay()) / 100.0)) / 100;
 
-                    if (colorData.getMaxViewsAverageTenDay()*0.15 < Integer.parseInt(viewsAverageTenDay)) {
+                    if (colorData.getMaxViewsAverageTenDay() * 0.15 < Integer.parseInt(viewsAverageTenDay)) {
                         int alpha = (int) (255 * (colorData.isEmpty ? 0 : coff));
                         clValues.add(getCellData(Integer.parseInt(viewsAverageTenDay), new Color(234, 153, 153, alpha)));
                     } else {
@@ -727,7 +733,7 @@ public class SheetsExample {
         wb.close();
     }
 
-    private static Sheet getStatisticSheet(List<Ad> ads , ReportFilter filters) {
+    private static Sheet getStatisticSheet(List<Ad> ads, ReportFilter filters) {
         Sheet sheet = new Sheet();
 
         SheetProperties sheetProp = new SheetProperties();
@@ -915,8 +921,8 @@ public class SheetsExample {
         Sheet sheet = new Sheet();
         SheetProperties sheetProp = new SheetProperties();
         sheetProp.setTitle("Анализ конкурентов");
+        sheetProp.setGridProperties(new GridProperties().setFrozenRowCount(1));
         sheet.setProperties(sheetProp);
-
         List<GridData> gData = new ArrayList<>();
         GridData gridData = new GridData();
         gData.add(gridData);
@@ -1059,6 +1065,13 @@ public class SheetsExample {
         return sheet;
     }
 
+    private static Double getAvg(Integer val, Integer count) {
+        if (count == 0)
+            return 0.0;
+        else
+            return (double) Math.round(val / (count * 1.0));
+    }
+
     private static Sheet getViewSheet(List<Ad> ads) throws ParseException {
         Sheet sheet = new Sheet();
         ViewAnalysis viewAnalysis = new ViewAnalysis(ads);
@@ -1087,19 +1100,17 @@ public class SheetsExample {
 
 
         for (int i = 0; i < 10; i++) {
-            {
-                rData.add(new RowData().setValues(Arrays.asList(
-                        getCellData(viewAnalysis.tenDays.get(i), new Color(232, 246, 239, 255)),
-                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.numOfNewAd[i])),
-                        getCellData(viewAnalysis.tenDays.get(i), new Color(232, 246, 239, 255)),
-                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.numOfUpAd[i])),
-                        new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
-                        getCellData(viewAnalysis.tenDays.get(i), new Color(232, 246, 239, 255)),
-                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.totalViewOfAd[i])),
-                        getCellData(viewAnalysis.tenDays.get(i), new Color(232, 246, 239, 255)),
-                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.avgViewOfAd[i]))
-                )));
-            }
+            rData.add(new RowData().setValues(Arrays.asList(
+                    getCellData(viewAnalysis.tenDays.get(i), new Color(232, 246, 239, 255)),
+                    new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.numOfNewAd[i])),
+                    getCellData(viewAnalysis.tenDays.get(i), new Color(232, 246, 239, 255)),
+                    new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.numOfUpAd[i])),
+                    new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                    getCellData(viewAnalysis.tenDays.get(i), new Color(232, 246, 239, 255)),
+                    new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.totalViewOfAd[i])),
+                    getCellData(viewAnalysis.tenDays.get(i), new Color(232, 246, 239, 255)),
+                    new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.avgViewOfAd[i]))
+            )));
         }
         rData.add(new RowData().setValues(Arrays.asList(
                 getCellData("ВСЕГО:", new Color(239, 239, 239, 255), true),
@@ -1145,56 +1156,54 @@ public class SheetsExample {
         )));
 
         for (int i = 0; i < 24; i++) {
-            {
-                if (viewAnalysis.tdayTotalViewOfNewAd[i] != 0 && viewAnalysis.tdayTotalViewOfUpAd[i] != 0) {
-                    rData.add(new RowData().setValues(Arrays.asList(
-                            getCellData(i, new Color(0, 0, 0, 0), true),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.tdayNumOfNewAd[i])),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.tdayTotalViewOfNewAd[i])),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) Math.round(viewAnalysis.tdayTotalViewOfNewAd[i] / (double) viewAnalysis.tdayNumOfNewAd[i]))),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
-                            getCellData(i, new Color(0, 0, 0, 0), true),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.tdayNumOfUpAd[i])),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.tdayTotalViewOfUpAd[i])),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) Math.round(viewAnalysis.tdayTotalViewOfUpAd[i] / (double) viewAnalysis.tdayNumOfUpAd[i])))
-                    )));
-                } else if (viewAnalysis.tdayTotalViewOfNewAd[i] == 0 && viewAnalysis.tdayTotalViewOfUpAd[i] != 0) {
-                    rData.add(new RowData().setValues(Arrays.asList(
-                            getCellData(i, new Color(0, 0, 0, 0), true),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
-                            getCellData(i, new Color(0, 0, 0, 0), true),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.tdayNumOfUpAd[i])),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.tdayTotalViewOfUpAd[i])),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) Math.round(viewAnalysis.tdayTotalViewOfUpAd[i] / (double) viewAnalysis.tdayNumOfUpAd[i])))
-                    )));
-                } else if (viewAnalysis.tdayTotalViewOfNewAd[i] != 0 && viewAnalysis.tdayTotalViewOfUpAd[i] == 0) {
-                    rData.add(new RowData().setValues(Arrays.asList(
-                            getCellData(i, new Color(0, 0, 0, 0), true),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.tdayNumOfNewAd[i])),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.tdayTotalViewOfNewAd[i])),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) Math.round(viewAnalysis.tdayTotalViewOfNewAd[i] / (double) viewAnalysis.tdayNumOfNewAd[i]))),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
-                            getCellData(i, new Color(0, 0, 0, 0), true),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0))
-                    )));
-                } else if (viewAnalysis.tdayTotalViewOfNewAd[i] == 0 && viewAnalysis.tdayTotalViewOfUpAd[i] == 0) {
-                    rData.add(new RowData().setValues(Arrays.asList(
-                            getCellData(i, new Color(0, 0, 0, 0), true),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
-                            getCellData(i, new Color(0, 0, 0, 0), true),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0))
-                    )));
-                }
+            if (viewAnalysis.tdayTotalViewOfNewAd[i] != 0 && viewAnalysis.tdayTotalViewOfUpAd[i] != 0) {
+                rData.add(new RowData().setValues(Arrays.asList(
+                        getCellData(i, new Color(0, 0, 0, 0), true),
+                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.tdayNumOfNewAd[i])),
+                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.tdayTotalViewOfNewAd[i])),
+                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue(getAvg(viewAnalysis.tdayTotalViewOfNewAd[i], viewAnalysis.tdayNumOfNewAd[i]))),
+                        new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                        getCellData(i, new Color(0, 0, 0, 0), true),
+                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.tdayNumOfUpAd[i])),
+                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.tdayTotalViewOfUpAd[i])),
+                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue(getAvg(viewAnalysis.tdayTotalViewOfUpAd[i], viewAnalysis.tdayNumOfUpAd[i])))
+                )));
+            } else if (viewAnalysis.tdayTotalViewOfNewAd[i] == 0 && viewAnalysis.tdayTotalViewOfUpAd[i] != 0) {
+                rData.add(new RowData().setValues(Arrays.asList(
+                        getCellData(i, new Color(0, 0, 0, 0), true),
+                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
+                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
+                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
+                        new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                        getCellData(i, new Color(0, 0, 0, 0), true),
+                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.tdayNumOfUpAd[i])),
+                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.tdayTotalViewOfUpAd[i])),
+                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue(getAvg(viewAnalysis.tdayTotalViewOfUpAd[i], viewAnalysis.tdayNumOfUpAd[i])))
+                )));
+            } else if (viewAnalysis.tdayTotalViewOfNewAd[i] != 0 && viewAnalysis.tdayTotalViewOfUpAd[i] == 0) {
+                rData.add(new RowData().setValues(Arrays.asList(
+                        getCellData(i, new Color(0, 0, 0, 0), true),
+                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.tdayNumOfNewAd[i])),
+                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.tdayTotalViewOfNewAd[i])),
+                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue(getAvg(viewAnalysis.tdayTotalViewOfNewAd[i], viewAnalysis.tdayNumOfNewAd[i]))),
+                        new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                        getCellData(i, new Color(0, 0, 0, 0), true),
+                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
+                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
+                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0))
+                )));
+            } else if (viewAnalysis.tdayTotalViewOfNewAd[i] == 0 && viewAnalysis.tdayTotalViewOfUpAd[i] == 0) {
+                rData.add(new RowData().setValues(Arrays.asList(
+                        getCellData(i, new Color(0, 0, 0, 0), true),
+                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
+                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
+                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
+                        new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                        getCellData(i, new Color(0, 0, 0, 0), true),
+                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
+                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
+                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0))
+                )));
             }
         }
         rData.add(new RowData().setValues(Arrays.asList(
@@ -1364,7 +1373,6 @@ public class SheetsExample {
         RowData rowData = new RowData();
         List<CellData> clHeaders = new ArrayList<>();
         Color headerBgColor = new Color(201, 218, 248);
-
 
         if (filters.isPosition()) {
             CellData header0 = getCellData("Позиция", headerBgColor, true);
