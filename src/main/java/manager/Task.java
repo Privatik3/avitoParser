@@ -40,7 +40,7 @@ public class Task {
     private String id;
     private Type type;
 
-    private Boolean saveReport = true;
+    private Boolean saveReport = false;
 
     private String token;
     private String title = "";
@@ -285,6 +285,9 @@ public class Task {
             DBHandler.saveHistory(record);
             result.clear();
         } catch (Exception e) {
+            e.printStackTrace();
+
+
             String errorMessage = "Ошибка во время парсинга\n" +
                             "Exception: " + e.getMessage();
             log.log(Level.SEVERE, errorMessage);

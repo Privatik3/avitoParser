@@ -106,7 +106,6 @@ public class SheetsExample {
             // -------------------- MAIN SHEET --------------------
             Sheet mainSheet = new Sheet();
 
-
             SheetProperties sheetProperties = new SheetProperties();
             sheetProperties.setTitle("Объявления");
             GridProperties gridProperties = new GridProperties();
@@ -148,11 +147,11 @@ public class SheetsExample {
 //            }
 
             // -------------------- STATISTIC SHEET --------------------
-            sheets.add(getStatisticSheet(ads));
             if (filters.isDate()) {
                 sheets.add(getViewSheet(ads));
                 sheets.add(getCompetitorSheet(ads, filters));
             }
+            sheets.add(getStatisticSheet(ads));
 
             requestBody.setSheets(sheets);
             Sheets.Spreadsheets.Create request = sheetsService.spreadsheets().create(requestBody);
@@ -185,14 +184,17 @@ public class SheetsExample {
 
                 return String.format("http://%s:8081/api/report/%s?fileID=%s", localHost.getHostAddress(), title, fileId);
             } else {
+                if (filters.isDate()) {
+                    try {
+                        List<Request> requests = new ArrayList<>();
+                        requests.add(createCellSizeRequest(0, 4, 150));
+                        requests.add(createCellSizeRequest(4, 5, 20));
+                        requests.add(createCellSizeRequest(5, 9, 150));
 
-                List<Request> requests = new ArrayList<>();
-                requests.add(createCellSizeRequest(0, 4, 150));
-                requests.add(createCellSizeRequest(4, 5, 20));
-                requests.add(createCellSizeRequest(5, 9, 150));
-
-                BatchUpdateSpreadsheetRequest body = new BatchUpdateSpreadsheetRequest().setRequests(requests);
-                sheetsService.spreadsheets().batchUpdate(response.getSpreadsheetId(), body).execute();
+                        BatchUpdateSpreadsheetRequest body = new BatchUpdateSpreadsheetRequest().setRequests(requests);
+                        sheetsService.spreadsheets().batchUpdate(response.getSpreadsheetId(), body).execute();
+                    } catch ( Exception ignore ) {}
+                }
 
                 return response.getSpreadsheetUrl();
             }
@@ -256,7 +258,7 @@ public class SheetsExample {
             views = ad.getViews();
 
             double coff = (Integer.parseInt(views) / ((colorData.getMaxViews() - colorData.getMinViews()) / 100.0)) / 100;
-            int alpha = (int) (255 * ( colorData.isEmpty ? 0 : coff ));
+            int alpha = (int) (255 * (colorData.isEmpty ? 0 : coff));
 
             clValues.add(getCellData(Integer.parseInt(views), new Color(255, 214, 102, alpha)));
         } catch (Exception ignore) {
@@ -269,7 +271,7 @@ public class SheetsExample {
         try {
             dailyViews = ad.getDailyViews();
             double coff = (Integer.parseInt(dailyViews) / ((colorData.getMaxDailyViews() - colorData.getMinDailyViews()) / 100.0)) / 100;
-            int alpha = (int) (255 * ( colorData.isEmpty ? 0 : coff ));
+            int alpha = (int) (255 * (colorData.isEmpty ? 0 : coff));
             clValues.add(getCellData(Integer.parseInt(dailyViews), new Color(147, 196, 125, alpha)));
         } catch (Exception ignore) {
             clValues.add(getCellData(0));
@@ -279,7 +281,7 @@ public class SheetsExample {
         try {
             viewYesterday = ad.getViewYesterday();
             double coff = (Integer.parseInt(viewYesterday) / ((colorData.getMaxViewYesterday() - colorData.getMinViewYesterday()) / 100.0)) / 100;
-            int alpha = (int) (255 * ( colorData.isEmpty ? 0 : coff ));
+            int alpha = (int) (255 * (colorData.isEmpty ? 0 : coff));
             clValues.add(getCellData(Integer.parseInt(viewYesterday), new Color(60, 120, 216, alpha)));
         } catch (Exception ignore) {
             clValues.add(getCellData(0));
@@ -293,7 +295,7 @@ public class SheetsExample {
                     String viewsTenDay = ad.getViewsTenDay();
 
                     double coff = (Integer.parseInt(viewsTenDay) / ((colorData.getMaxViewsTenDay() - colorData.getMinViewsTenDay()) / 100.0)) / 100;
-                    int alpha = (int) (255 * ( colorData.isEmpty ? 0 : coff ));
+                    int alpha = (int) (255 * (colorData.isEmpty ? 0 : coff));
                     clValues.add(getCellData(Integer.parseInt(viewsTenDay), new Color(194, 123, 160, alpha)));
                 } catch (Exception ignore) {
                     clValues.add(getCellData(0));
@@ -302,7 +304,7 @@ public class SheetsExample {
                 try {
                     Integer maxTenDay = ad.getMaxTenDay();
                     double coff = (maxTenDay / ((colorData.getMaxMaxTenDay() - colorData.getMinMaxTenDay()) / 100.0)) / 100;
-                    int alpha = (int) (255 * ( colorData.isEmpty ? 0 : coff ));
+                    int alpha = (int) (255 * (colorData.isEmpty ? 0 : coff));
                     clValues.add(getCellData(maxTenDay, new Color(87, 187, 138, alpha)));
                 } catch (Exception ignore) {
                     clValues.add(getCellData(0));
@@ -318,7 +320,7 @@ public class SheetsExample {
                 try {
                     String viewsAverageTenDay = ad.getViewsAverageTenDay();
                     double coff = (Integer.parseInt(viewsAverageTenDay) / ((colorData.getMaxViewsAverageTenDay() - colorData.getMinViewsAverageTenDay()) / 100.0)) / 100;
-                    int alpha = (int) (255 * ( colorData.isEmpty ? 0 : coff ));
+                    int alpha = (int) (255 * (colorData.isEmpty ? 0 : coff));
                     clValues.add(getCellData(Integer.parseInt(viewsAverageTenDay), new Color(234, 153, 153, alpha)));
                 } catch (Exception ignore) {
                     clValues.add(getCellData(0));
@@ -807,7 +809,6 @@ public class SheetsExample {
         // -------------------- SET VALUES --------------------
 
 
-
         // Сводная таблица
         Color headerBgColor = new Color(201, 218, 248);
 
@@ -828,24 +829,24 @@ public class SheetsExample {
 
         rData.add(new RowData().setValues(Arrays.asList(
 
-        getCellData("№", headerBgColor, true),
-        getCellData("Имя продавца", headerBgColor, true),
-        getCellData("Телефон", headerBgColor, true),
+                getCellData("№", headerBgColor, true),
+                getCellData("Имя продавца", headerBgColor, true),
+                getCellData("Телефон", headerBgColor, true),
 
-        header.setNote("Количество объявлений в данной выдаче на Авито"),
-        header1.setNote("Среднее значение позиций в выдаче, объявлений данного продавца."),
-        header2.setNote("Количество объявлений, к которым продавец применяет платные услуги , в данной выдаче."),
-        header3.setNote("Все применяемые методы (платные услуги) продавцом, в данной выдаче."),
-        header4.setNote("Дата и время поднятия одного из объявлений, собравшее максимальное кол-во просмотров за сегодняшний день с 00:00 часов до момента парсинга."),
-        header5.setNote("Количество Активных объявлений у данного продавца, размещенных на Авито в той или иной категории."),
-        header6.setNote("Общее количество просмотров на всех объявлениях данного продавца, в данной выдаче."),
-        header7.setNote("Общее количество просмотров на всех объявлениях данного продавца за сегодняшний день, с 00:00 часов до момента парсинга."),
-        header8.setNote("Общее количество просмотров на всех объявлениях данного продавца за весь вчерашний день, с 00:00 до 24:00 часов"),
-        header9.setNote("Общее количество просмотров на всех объявлениях данного продавца за предыдущие 10 дней, включая сегодняшний"),
-        header10.setNote("Максимальное количество просмотров на одном из объявлений, за один из предыдущих 10 дней"),
-        header11.setNote("Среднее количество фотографий размещеных в объявлениях данного продавца"),
-        header12.setNote("Среднее количество знаков (символов) в тексте объявлений данного продавца"),
-        header13.setNote("Количество объявлений с указанием доставки")
+                header.setNote("Количество объявлений в данной выдаче на Авито"),
+                header1.setNote("Среднее значение позиций в выдаче, объявлений данного продавца."),
+                header2.setNote("Количество объявлений, к которым продавец применяет платные услуги , в данной выдаче."),
+                header3.setNote("Все применяемые методы (платные услуги) продавцом, в данной выдаче."),
+                header4.setNote("Дата и время поднятия одного из объявлений, собравшее максимальное кол-во просмотров за сегодняшний день с 00:00 часов до момента парсинга."),
+                header5.setNote("Количество Активных объявлений у данного продавца, размещенных на Авито в той или иной категории."),
+                header6.setNote("Общее количество просмотров на всех объявлениях данного продавца, в данной выдаче."),
+                header7.setNote("Общее количество просмотров на всех объявлениях данного продавца за сегодняшний день, с 00:00 часов до момента парсинга."),
+                header8.setNote("Общее количество просмотров на всех объявлениях данного продавца за весь вчерашний день, с 00:00 до 24:00 часов"),
+                header9.setNote("Общее количество просмотров на всех объявлениях данного продавца за предыдущие 10 дней, включая сегодняшний"),
+                header10.setNote("Максимальное количество просмотров на одном из объявлений, за один из предыдущих 10 дней"),
+                header11.setNote("Среднее количество фотографий размещеных в объявлениях данного продавца"),
+                header12.setNote("Среднее количество знаков (символов) в тексте объявлений данного продавца"),
+                header13.setNote("Количество объявлений с указанием доставки")
         )));
         boolean color = false;
         for (int i = 0; i < competitors.size(); i++) {
@@ -855,49 +856,73 @@ public class SheetsExample {
             if (color) {
                 adColor = 0;
                 color = false;
-            }
-            else {
+            } else {
                 adColor = 255;
                 color = true;
             }
 
 
             rData.add(new RowData().setValues(Arrays.asList(
-                    getCellData(i, new Color(232,240,254, adColor)),
-                    getCellData(competitor.getSellerTitle(), new Color(232,240,254, adColor)),
-                    getCellData(competitor.getPhone(), new Color(232,240,254, adColor)),
-                    getCellData(competitor.getAdCount(), new Color(232,240,254, adColor)),
-                    getCellData(competitor.getPosition(), new Color(232,240,254, adColor)),
-                    getCellData(competitor.getPromAd(), new Color(232,240,254, adColor)),
-                    getCellData(competitor.getPromMethods(), new Color(232,240,254, adColor)),
-                    getCellData(competitor.getMaxViewDate(), new Color(232,240,254, adColor)),
-                    getCellData(competitor.getTotalActiveAd(), new Color(232,240,254, adColor)),
-                    getCellData(competitor.getTotalView(), new Color(232,240,254, adColor)),
-                    getCellData(competitor.getTodayView(), new Color(232,240,254, adColor)),
-                    getCellData(competitor.getYesterdayView(), new Color(232,240,254, adColor)),
-                    getCellData(competitor.getTotalTenDaysView(), new Color(232,240,254, adColor)),
-                    getCellData(competitor.getMaxTenDaysView(), new Color(232,240,254, adColor)),
-                    getCellData(competitor.getPhoto(), new Color(232,240,254, adColor)),
-                    getCellData(competitor.getTextCount(), new Color(232,240,254, adColor)),
-                    getCellData(competitor.getDelivery(), new Color(232,240,254, adColor))
+                    getCellData(i, new Color(232, 240, 254, adColor)),
+                    getCellData(competitor.getSellerTitle(), new Color(232, 240, 254, adColor)),
+                    getCellData(competitor.getPhone(), new Color(232, 240, 254, adColor)),
+                    getCellData(competitor.getAdCount(), new Color(232, 240, 254, adColor)),
+                    getCellData(competitor.getPosition(), new Color(232, 240, 254, adColor)),
+                    getCellData(competitor.getPromAd(), new Color(232, 240, 254, adColor)),
+                    getCellData(competitor.getPromMethods(), new Color(232, 240, 254, adColor)),
+                    getCellData(competitor.getMaxViewDate(), new Color(232, 240, 254, adColor)),
+                    getCellData(competitor.getTotalActiveAd(), new Color(232, 240, 254, adColor)),
+                    getCellData(competitor.getTotalView(), new Color(232, 240, 254, adColor)),
+                    getCellData(competitor.getTodayView(), new Color(232, 240, 254, adColor)),
+                    getCellData(competitor.getYesterdayView(), new Color(232, 240, 254, adColor)),
+                    getCellData(competitor.getTotalTenDaysView(), new Color(232, 240, 254, adColor)),
+                    getCellData(competitor.getMaxTenDaysView(), new Color(232, 240, 254, adColor)),
+                    getCellData(competitor.getPhoto(), new Color(232, 240, 254, adColor)),
+                    getCellData(competitor.getTextCount(), new Color(232, 240, 254, adColor)),
+                    getCellData(competitor.getDelivery(), new Color(232, 240, 254, adColor))
             )));
-
 
 
         }
 
         // Костыль на пустую строку
-        rData.add(new RowData().setValues(Collections.singletonList(getCellData(""))));
+        /*rData.add(new RowData().setValues(Collections.singletonList(getCellData(""))));
         rData.add(new RowData().setValues(Collections.singletonList(getCellData(""))));
 
         filters.setDescription(false);
         rData.add(getRowHeaders(filters));
         // Общая таблица
+        boolean colorFlag = false;
+        String phone = "";
         for (Ad ad : sortedAds) {
+            if (!ad.getPhone().equals(phone)) {
+                colorFlag = !colorFlag;
+                phone = ad.getPhone();
+            }
+
+            com.google.api.services.sheets.v4.model.Color adColor;
+            if (colorFlag) {
+                adColor = new com.google.api.services.sheets.v4.model.Color()
+                        .setRed((float) 0.9098)
+                        .setGreen((float) 0.9647)
+                        .setBlue((float) 0.9372);
+            } else {
+                adColor = new com.google.api.services.sheets.v4.model.Color()
+                        .setRed((float) 1)
+                        .setGreen((float) 1)
+                        .setBlue((float) 1);
+            }
+
             RowData rowVal = getRowData(filters, true, ad, new ColorData());
             if (rowVal == null) continue;
+
+            List<CellData> values = rowVal.getValues();
+            for (int i = 0; i < values.size(); i++) {
+                values.get(i).setUserEnteredFormat(new CellFormat().setBackgroundColor(adColor));
+            }
+
             rData.add(rowVal);
-        }
+        }*/
 
         // -------------------- SET VALUES ( END ) --------------------
 
@@ -1353,7 +1378,7 @@ public class SheetsExample {
         if (val instanceof Integer) {
             exValue.setNumberValue(Double.valueOf((Integer) val));
         } else if (val instanceof Double) {
-            exValue.setNumberValue( Math.round((Double) val * 100.0) / 100.0);
+            exValue.setNumberValue(Math.round((Double) val * 100.0) / 100.0);
         } else if (val instanceof String) {
             String sVal = (String) val;
             if (sVal.startsWith("="))

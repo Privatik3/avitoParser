@@ -64,14 +64,18 @@ public class ColorData {
         minViews = Collections.min(viewsMax);
         maxDailyViews = Collections.max(dailyViewsMax);
         minDailyViews = Collections.min(dailyViewsMax);
-        maxViewsTenDay = Collections.max(viewsTenDayMax);
-        minViewsTenDay = Collections.min(viewsTenDayMax);
-        maxMaxTenDay = Collections.max(maxTenDayMax);
-        minMaxTenDay = Collections.min(maxTenDayMax);
-        maxViewsAverageTenDay = Collections.max(viewsAverageTenDayMax);
-        minViewsAverageTenDay = Collections.min(viewsAverageTenDayMax);
         maxViewYesterday = Collections.max(maxViewYesterdayMax);
         minViewYesterday = Collections.min(maxViewYesterdayMax);
+
+        try {
+            maxViewsTenDay = Collections.max(viewsTenDayMax);
+            minViewsTenDay = Collections.min(viewsTenDayMax);
+            maxMaxTenDay = Collections.max(maxTenDayMax);
+            minMaxTenDay = Collections.min(maxTenDayMax);
+            maxViewsAverageTenDay = Collections.max(viewsAverageTenDayMax);
+            minViewsAverageTenDay = Collections.min(viewsAverageTenDayMax);
+        } catch (Exception ignore) { }
+
     }
 
     private static boolean isNum(String s) {
