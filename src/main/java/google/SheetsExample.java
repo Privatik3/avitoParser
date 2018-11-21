@@ -82,12 +82,12 @@ public class SheetsExample {
         int descLength = 0;
 
         boolean offlineMod = false;
-        if (filters.isDescription()) {
-            for (Ad ad : ads)
-                descLength += ad.getText() == null ? 0 : ad.getText().length();
-
-            offlineMod = descLength > 3_000_000;
-        }
+//        if (filters.isDescription()) {
+//            for (Ad ad : ads)
+//                descLength += ad.getText() == null ? 0 : ad.getText().length();
+//
+//            offlineMod = descLength > 3_000_000;
+//        }
 
         ColorData colorData = new ColorData(ads);
 
@@ -108,6 +108,7 @@ public class SheetsExample {
 
             SheetProperties sheetProperties = new SheetProperties();
             sheetProperties.setTitle("Объявления");
+            sheetProperties.setSheetId(0);
             GridProperties gridProperties = new GridProperties();
             gridProperties.setFrozenRowCount(1);
             sheetProperties.setGridProperties(gridProperties);
@@ -130,7 +131,7 @@ public class SheetsExample {
             }
             // -------------------- SET VALUES ( END ) --------------------
 
-            gridData.setRowData(rData);
+//            gridData.setRowData(rData);
             mainSheet.setData(gData);
             sheets.add(mainSheet);
             // -------------------- MAIN SHEET ( END ) --------------------
@@ -151,14 +152,14 @@ public class SheetsExample {
                 sheets.add(getViewSheet(ads));
                 sheets.add(getCompetitorSheet(ads, filters));
             }
-            sheets.add(getStatisticSheet(ads));
+            sheets.add(getStatisticSheet(ads, filters));
 
             requestBody.setSheets(sheets);
             Sheets.Spreadsheets.Create request = sheetsService.spreadsheets().create(requestBody);
 
 
             Spreadsheet response = null;
-            for (int i = 0; i < 3; i++) {
+            for (int i = 0; i < 2; i++) {
                 try {
                     response = request.execute();
                     break;
@@ -191,9 +192,44 @@ public class SheetsExample {
                         requests.add(createCellSizeRequest(4, 5, 20));
                         requests.add(createCellSizeRequest(5, 9, 150));
 
-                        BatchUpdateSpreadsheetRequest body = new BatchUpdateSpreadsheetRequest().setRequests(requests);
-                        sheetsService.spreadsheets().batchUpdate(response.getSpreadsheetId(), body).execute();
-                    } catch ( Exception ignore ) {}
+//                        int reqSize = filters.isDescription() ? 2000 : 4000;
+                        int reqSize = 500;
+                        int check = 1;
+                        List<RowData> tmpData = new ArrayList<>(reqSize + 1);
+                        Iterator<RowData> rIter = rData.iterator();
+                        while (rIter.hasNext()) {
+                            if (tmpData.size() > reqSize) {
+                                requests.add(new Request().setAppendCells(new AppendCellsRequest().setSheetId(0).setFields("*").setRows(tmpData)));
+                                BatchUpdateSpreadsheetRequest body = new BatchUpdateSpreadsheetRequest().setRequests(requests);
+
+                                try {
+                                    sheetsService.spreadsheets().batchUpdate(response.getSpreadsheetId(), body).execute();
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                    break;
+                                } finally {
+                                    System.out.println(check++);
+                                }
+
+                                Thread.sleep(250);
+                                tmpData.clear();
+                                request.clear();
+                            } else {
+                                tmpData.add(rIter.next());
+                                rIter.remove();
+                            }
+                        }
+
+//                        requests.add(new Request().setAppendCells(new AppendCellsRequest().setSheetId(0).setFields("*").setRows(tmpData)));
+//                        BatchUpdateSpreadsheetRequest body = new BatchUpdateSpreadsheetRequest().setRequests(requests);
+//
+//                        sheetsService.spreadsheets().batchUpdate(response.getSpreadsheetId(), body).execute();
+
+                        tmpData.clear();
+                        request.clear();
+                    } catch (Exception ignore) {
+                        ignore.printStackTrace();
+                    }
                 }
 
                 return response.getSpreadsheetUrl();
@@ -647,7 +683,7 @@ public class SheetsExample {
         wb.close();
     }
 
-    private static Sheet getStatisticSheet(List<Ad> ads) {
+    private static Sheet getStatisticSheet(List<Ad> ads , ReportFilter filters) {
         Sheet sheet = new Sheet();
 
         SheetProperties sheetProp = new SheetProperties();
@@ -666,76 +702,109 @@ public class SheetsExample {
         rData.add(new RowData().setValues(Arrays.asList(
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("Всего:")),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("Объявлений:")),
-                new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=СЧЁТЗ('Объявления'!A2:A20000)"))
+                new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=СЧЁТЗ('Объявления'!B2:B19998)"))
         )));
         rData.add(new RowData());
 
-        rData.add(new RowData().setValues(Arrays.asList(
-                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("Методы продвижения:")),
-                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("5 - XL")),
-                new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=СЧЁТЕСЛИМН('Объявления'!E2:E20000;\"*5*\")"))
-        )));
 
-        rData.add(new RowData().setValues(Arrays.asList(
-                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
-                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("4 - Поднятие")),
-                new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=СЧЁТЕСЛИМН('Объявления'!E2:E20000;\"*4*\")"))
-        )));
+        if (filters.isDate()) {
+            rData.add(new RowData().setValues(Arrays.asList(
+                    new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("Методы продвижения:")),
+                    new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("5 - XL")),
+                    new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=СЧЁТЕСЛИМН('Объявления'!L2:L19998;\"*5*\")"))
+            )));
 
-        rData.add(new RowData().setValues(Arrays.asList(
-                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
-                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("3 - Выделение")),
-                new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=СЧЁТЕСЛИМН('Объявления'!E2:E20000;\"*3*\")"))
-        )));
+            rData.add(new RowData().setValues(Arrays.asList(
+                    new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                    new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("4 - Поднятие")),
+                    new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=СЧЁТЕСЛИМН('Объявления'!L2:L19998;\"*4*\")"))
+            )));
 
-        rData.add(new RowData().setValues(Arrays.asList(
-                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
-                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("2 - VIP")),
-                new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=СЧЁТЕСЛИМН('Объявления'!E2:E20000;\"*2*\")"))
-        )));
+            rData.add(new RowData().setValues(Arrays.asList(
+                    new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                    new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("3 - Выделение")),
+                    new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=СЧЁТЕСЛИМН('Объявления'!L2:L19998;\"*3*\")"))
+            )));
 
-        rData.add(new RowData().setValues(Arrays.asList(
-                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
-                new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("1 - Премиум")),
-                new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=СЧЁТЕСЛИМН('Объявления'!E2:E20000;\"*1*\")"))
-        )));
-        rData.add(new RowData());
+            rData.add(new RowData().setValues(Arrays.asList(
+                    new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                    new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("2 - VIP")),
+                    new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=СЧЁТЕСЛИМН('Объявления'!L2:L19998;\"*2*\")"))
+            )));
 
+            rData.add(new RowData().setValues(Arrays.asList(
+                    new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                    new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("1 - Премиум")),
+                    new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=СЧЁТЕСЛИМН('Объявления'!L2:L19998;\"*1*\")"))
+            )));
+            rData.add(new RowData());
+        } else {
+            rData.add(new RowData().setValues(Arrays.asList(
+                    new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("Методы продвижения:")),
+                    new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("5 - XL")),
+                    new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=СЧЁТЕСЛИМН('Объявления'!H2:H19998;\"*5*\")"))
+            )));
+
+            rData.add(new RowData().setValues(Arrays.asList(
+                    new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                    new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("4 - Поднятие")),
+                    new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=СЧЁТЕСЛИМН('Объявления'!H2:H19998;\"*4*\")"))
+            )));
+
+            rData.add(new RowData().setValues(Arrays.asList(
+                    new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                    new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("3 - Выделение")),
+                    new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=СЧЁТЕСЛИМН('Объявления'!H2:H19998;\"*3*\")"))
+            )));
+
+            rData.add(new RowData().setValues(Arrays.asList(
+                    new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                    new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("2 - VIP")),
+                    new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=СЧЁТЕСЛИМН('Объявления'!H2:H19998;\"*2*\")"))
+            )));
+
+            rData.add(new RowData().setValues(Arrays.asList(
+                    new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                    new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("1 - Премиум")),
+                    new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=СЧЁТЕСЛИМН('Объявления'!H2:H19998;\"*1*\")"))
+            )));
+            rData.add(new RowData());
+        }
         rData.add(new RowData().setValues(Arrays.asList(
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("Цена:")),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("Минимальная:")),
-                new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=МИН('Объявления'!B2:B20000)"))
+                new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=МИН('Объявления'!C2:C19998)"))
         )));
 
         rData.add(new RowData().setValues(Arrays.asList(
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("Средняя:")),
-                new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=СРЗНАЧ('Объявления'!B2:B20000)"))
+                new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=СРЗНАЧ('Объявления'!C2:C19998)"))
         )));
 
         rData.add(new RowData().setValues(Arrays.asList(
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("Максимальная:")),
-                new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=МАКС('Объявления'!B2:B20000)"))
+                new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=МАКС('Объявления'!C2:C19998)"))
         )));
         rData.add(new RowData());
 
         rData.add(new RowData().setValues(Arrays.asList(
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("Просмотры:")),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("Минимальная:")),
-                new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=МИН('Объявления'!C2:C20000)"))
+                new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=МИН('Объявления'!E2:E19998)"))
         )));
 
         rData.add(new RowData().setValues(Arrays.asList(
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("Средняя:")),
-                new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=СРЗНАЧ('Объявления'!C2:C20000)"))
+                new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=СРЗНАЧ('Объявления'!E2:E19998)"))
         )));
 
         rData.add(new RowData().setValues(Arrays.asList(
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("Максимальная:")),
-                new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=МАКС('Объявления'!C2:C20000)"))
+                new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=МАКС('Объявления'!E2:E19998)"))
         )));
         rData.add(new RowData());
 
@@ -750,18 +819,34 @@ public class SheetsExample {
         }).collect(Collectors.toList()))) {
             if (address.isEmpty()) continue;
             if (coin) {
-                rData.add(new RowData().setValues(Arrays.asList(
-                        new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("Районы:")),
-                        new CellData().setUserEnteredValue(new ExtendedValue().setStringValue(address)),
-                        new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=СЧЁТЕСЛИМН('Объявления'!F2:F20000;\"*" + address + "*\")"))
-                )));
+                if (filters.isDate()) {
+                    rData.add(new RowData().setValues(Arrays.asList(
+                            new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("Районы:")),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setStringValue(address)),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=СЧЁТЕСЛИМН('Объявления'!W2:W19998;\"*" + address + "*\")"))
+                    )));
+                } else {
+                    rData.add(new RowData().setValues(Arrays.asList(
+                            new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("Районы:")),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setStringValue(address)),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=СЧЁТЕСЛИМН('Объявления'!R2:R19998;\"*" + address + "*\")"))
+                    )));
+                }
                 coin = false;
             } else {
-                rData.add(new RowData().setValues(Arrays.asList(
-                        new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
-                        new CellData().setUserEnteredValue(new ExtendedValue().setStringValue(address)),
-                        new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=СЧЁТЕСЛИМН('Объявления'!F2:F20000;\"*" + address + "*\")"))
-                )));
+                if (filters.isDate()) {
+                    rData.add(new RowData().setValues(Arrays.asList(
+                            new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setStringValue(address)),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=СЧЁТЕСЛИМН('Объявления'!W2:W19998;\"*" + address + "*\")"))
+                    )));
+                } else {
+                    rData.add(new RowData().setValues(Arrays.asList(
+                            new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setStringValue(address)),
+                            new CellData().setUserEnteredValue(new ExtendedValue().setFormulaValue("=СЧЁТЕСЛИМН('Объявления'!R2:R19998;\"*" + address + "*\")"))
+                    )));
+                }
             }
         }
         // -------------------- SET VALUES ( END ) --------------------
@@ -833,7 +918,7 @@ public class SheetsExample {
                 getCellData("Имя продавца", headerBgColor, true),
                 getCellData("Телефон", headerBgColor, true),
 
-                header.setNote("Количество объявлений в данной выдаче на Авито"),
+                header.setNote("Количество объявлений этого продавца в данной выдаче на Авито"),
                 header1.setNote("Среднее значение позиций в выдаче, объявлений данного продавца."),
                 header2.setNote("Количество объявлений, к которым продавец применяет платные услуги , в данной выдаче."),
                 header3.setNote("Все применяемые методы (платные услуги) продавцом, в данной выдаче."),
@@ -860,7 +945,6 @@ public class SheetsExample {
                 adColor = 255;
                 color = true;
             }
-
 
             rData.add(new RowData().setValues(Arrays.asList(
                     getCellData(i, new Color(232, 240, 254, adColor)),
@@ -1273,6 +1357,7 @@ public class SheetsExample {
             header16.setNote("Максимальное количество просмотров за один из предыдущих 10 дней");
             clHeaders.add(header16);
             CellData header17 = getCellData("Дата. max. Просм.", headerBgColor, true);
+            header17.setNote("Тот день, когда данное объявление набрало максимальное кол-во просмотров за период предыдущих 10 дней.");
             clHeaders.add(header17);
             CellData header18 = getCellData("Просм. ср. 10 дней", headerBgColor, true);
             header18.setNote("Среднее количество просмотров за предыдущие 10 дней.");
@@ -1372,7 +1457,8 @@ public class SheetsExample {
         if (isBold)
             format.setTextFormat(new TextFormat().setBold(true));
 
-        cell.setUserEnteredFormat(format);
+        if (userColor.getRGB() < -70000)
+            cell.setUserEnteredFormat(format);
 
         ExtendedValue exValue = new ExtendedValue();
         if (val instanceof Integer) {

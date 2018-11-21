@@ -29,7 +29,7 @@ public class CompetitorAnalysis {
 
         this.adCount = sellerAds.size();
         this.phone = sellerAds.get(0).getPhone();
-        this.sellerTitle = sellerAds.get(0).getTitle();
+        this.sellerTitle = sellerAds.get(0).getSeller();
         this.totalActiveAd = Integer.parseInt(sellerAds.get(0).getActiveAd());
 
         String today = "########";

@@ -40,7 +40,7 @@ public class Task {
     private String id;
     private Type type;
 
-    private Boolean saveReport = false;
+    private Boolean saveReport = true;
 
     private String token;
     private String title = "";
@@ -332,6 +332,7 @@ public class Task {
 
         try {
             int pages = Integer.parseInt(params.get("max_pages").get(0));
+//            pages = pages > 50 ? 50 : pages;
             params.remove("max_pages");
 
             params.computeIfPresent("name", (key, value) ->
