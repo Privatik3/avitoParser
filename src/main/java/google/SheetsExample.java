@@ -83,7 +83,7 @@ public class SheetsExample {
         int descLength = 0;
 
         //TODO Здесь можешь регулировать какие фильтры будут отключены
-        filters.setPosition(false);
+//        filters.setPosition(false);
 
         boolean offlineMod = false;
 //        if (filters.isDescription()) {
@@ -152,8 +152,10 @@ public class SheetsExample {
 //            }
 
             // -------------------- STATISTIC SHEET --------------------
+            ViewAnalysis viewAnalysis = null;
             if (filters.isDate()) {
-                sheets.add(getViewSheet(ads));
+                viewAnalysis = new ViewAnalysis(ads);
+                sheets.add(getViewSheet(viewAnalysis));
                 sheets.add(getCompetitorSheet(ads, filters));
             }
             sheets.add(getStatisticSheet(ads, filters));
@@ -213,8 +215,96 @@ public class SheetsExample {
                                     requests.add(createBorderRequest(1, 13, 41, 5, 9));
                                     requests.add(createBorderRequest(1, 42, 70, 0, 4));
                                     requests.add(createBorderRequest(1, 42, 70, 5, 9));
-                                    //TODO Добавить здесь остальные рамки
 
+                                    // Тест покраски
+                                    if (viewAnalysis != null) {
+
+                                        double[] numAndTotal = new double[24];
+                                        double[] NumOfUpAndTotal = new double[24];
+                                        double[] yNumOfUpAndTotal = new double[24];
+                                        double[] ynumAndTotal = new double[24];
+                                        for (int i = 0; i < 24; i++) {
+                                            numAndTotal[i] = getAvg(viewAnalysis.tdayTotalViewOfNewAd[i], viewAnalysis.tdayNumOfNewAd[i]);
+                                            NumOfUpAndTotal[i] = getAvg(viewAnalysis.tdayTotalViewOfUpAd[i], viewAnalysis.tdayNumOfUpAd[i]);
+                                            yNumOfUpAndTotal[i] = getAvg(viewAnalysis.ydayTotalViewOfNewAd[i], viewAnalysis.ydayNumOfNewAd[i]);
+                                            ynumAndTotal[i] = getAvg(viewAnalysis.ydayTotalViewOfUpAd[i], viewAnalysis.ydayNumOfUpAd[i]);
+                                        }
+
+                                        //сегодня
+                                        IntSummaryStatistics tdayNumOfNewAdStat = Arrays.stream(viewAnalysis.tdayNumOfNewAd).summaryStatistics();
+                                        requests.add(createConditionFormat(
+                                                1, 16, 40, 1, 2,
+                                                tdayNumOfNewAdStat.getMin(), new Color(255, 255, 255),
+                                                tdayNumOfNewAdStat.getMax(), new Color(180, 167, 214)));
+
+                                        IntSummaryStatistics tdayTotalViewOfNewAdStat = Arrays.stream(viewAnalysis.tdayTotalViewOfNewAd).summaryStatistics();
+                                        requests.add(createConditionFormat(
+                                                1, 16, 40, 2, 3,
+                                                tdayTotalViewOfNewAdStat.getMin(), new Color(255, 255, 255),
+                                                tdayTotalViewOfNewAdStat.getMax(), new Color(213, 166, 189)));
+
+                                        DoubleSummaryStatistics tdayAvgNumOfNewAdStat = Arrays.stream(numAndTotal).summaryStatistics();
+                                        requests.add(createConditionFormat(
+                                                1, 16, 40, 3, 4,
+                                                (int) tdayAvgNumOfNewAdStat.getMin(), new Color(255, 255, 255),
+                                                (int) tdayAvgNumOfNewAdStat.getMax(), new Color(255,231,159)));
+
+                                        IntSummaryStatistics tdayNumOfUpAdStat = Arrays.stream(viewAnalysis.tdayNumOfUpAd).summaryStatistics();
+                                        requests.add(createConditionFormat(
+                                                1, 16, 40, 6, 7,
+                                                tdayNumOfUpAdStat.getMin(), new Color(255, 255, 255),
+                                                tdayNumOfUpAdStat.getMax(), new Color(180, 167, 214)));
+
+                                        IntSummaryStatistics tdayTotalViewOfUpAdStat = Arrays.stream(viewAnalysis.tdayTotalViewOfUpAd).summaryStatistics();
+                                        requests.add(createConditionFormat(
+                                                1, 16, 40, 7, 8,
+                                                tdayTotalViewOfUpAdStat.getMin(), new Color(255, 255, 255),
+                                                tdayTotalViewOfUpAdStat.getMax(), new Color(213, 166, 189)));
+
+                                        DoubleSummaryStatistics NumOfUpAndTotalStat = Arrays.stream(NumOfUpAndTotal).summaryStatistics();
+                                        requests.add(createConditionFormat(
+                                                1, 16, 40, 8, 9,
+                                                (int) NumOfUpAndTotalStat.getMin(), new Color(255, 255, 255),
+                                                (int) NumOfUpAndTotalStat.getMax(), new Color(255,231,159)));
+
+                                        //Вчера
+                                        IntSummaryStatistics ydayNumOfNewAdStat = Arrays.stream(viewAnalysis.ydayNumOfNewAd).summaryStatistics();
+                                        requests.add(createConditionFormat(
+                                                1, 45, 69, 1, 2,
+                                                ydayNumOfNewAdStat.getMin(), new Color(255, 255, 255),
+                                                ydayNumOfNewAdStat.getMax(), new Color(180, 167, 214)));
+
+                                        IntSummaryStatistics ydayTotalViewOfNewAdStat = Arrays.stream(viewAnalysis.ydayTotalViewOfNewAd).summaryStatistics();
+                                        requests.add(createConditionFormat(
+                                                1, 45, 69, 2, 3,
+                                                ydayTotalViewOfNewAdStat.getMin(), new Color(255, 255, 255),
+                                                ydayTotalViewOfNewAdStat.getMax(), new Color(213, 166, 189)));
+
+                                        DoubleSummaryStatistics yNumOfUpAndTotalStat = Arrays.stream(numAndTotal).summaryStatistics();
+                                        requests.add(createConditionFormat(
+                                                1, 45, 69, 3, 4,
+                                                (int) yNumOfUpAndTotalStat.getMin(), new Color(255, 255, 255),
+                                                (int) yNumOfUpAndTotalStat.getMax(), new Color(255,231,159)));
+
+                                        IntSummaryStatistics ydayNumOfUpAdStat = Arrays.stream(viewAnalysis.ydayNumOfUpAd).summaryStatistics();
+                                        requests.add(createConditionFormat(
+                                                1, 45, 69, 6, 7,
+                                                ydayNumOfUpAdStat.getMin(), new Color(255, 255, 255),
+                                                ydayNumOfUpAdStat.getMax(), new Color(180, 167, 214)));
+
+                                        IntSummaryStatistics ydayTotalViewOfUpAdStat = Arrays.stream(viewAnalysis.ydayTotalViewOfUpAd).summaryStatistics();
+                                        requests.add(createConditionFormat(
+                                                1, 45, 69, 7, 8,
+                                                ydayTotalViewOfUpAdStat.getMin(), new Color(255, 255, 255),
+                                                ydayTotalViewOfUpAdStat.getMax(), new Color(213, 166, 189)));
+
+                                        DoubleSummaryStatistics ynumAndTotalStat = Arrays.stream(NumOfUpAndTotal).summaryStatistics();
+                                        requests.add(createConditionFormat(
+                                                1, 45, 69, 8, 9,
+                                                (int) ynumAndTotalStat.getMin(), new Color(255, 255, 255),
+                                                (int) ynumAndTotalStat.getMax(), new Color(255,231,159)));
+
+                                    }
                                 }
 
                                 //TODO Добавить проверки на отключение этих ячеек ( Например позицию можно отключить )
@@ -267,6 +357,33 @@ public class SheetsExample {
                     "Не удалось получить ответ от Google API" :
                     "Не удалось сформировать отчёт"));
         }
+    }
+
+    private static Request createConditionFormat(int sheetId, int startRow, int endRow, int startCol, int endCol, int minVal, Color minColor, int maxVal, Color maxColor) {
+        return new Request().setAddConditionalFormatRule(
+                new AddConditionalFormatRuleRequest()
+                        .setRule(new ConditionalFormatRule()
+                                .setRanges(Collections.singletonList(
+                                        new GridRange()
+                                                .setSheetId(sheetId)
+                                                .setStartRowIndex(startRow)
+                                                .setEndRowIndex(endRow)
+                                                .setStartColumnIndex(startCol)
+                                                .setEndColumnIndex(endCol)
+                                ))
+                                .setGradientRule(
+                                        new GradientRule()
+                                                .setMinpoint(new InterpolationPoint()
+                                                        .setColor(convertToGColor(minColor))
+                                                        .setType("NUMBER")
+                                                        .setValue(String.valueOf(minVal)))
+                                                .setMaxpoint(new InterpolationPoint()
+                                                        .setColor(convertToGColor(maxColor))
+                                                        .setType("NUMBER")
+                                                        .setValue(String.valueOf(maxVal)))
+                                )
+                        )
+        );
     }
 
     private static Request createBorderRequest(Integer SheetId, Integer startRow, Integer endRow, Integer startCol, Integer endCol) {
@@ -1120,9 +1237,8 @@ public class SheetsExample {
         }
     }
 
-    private static Sheet getViewSheet(List<Ad> ads) throws ParseException {
+    private static Sheet getViewSheet(ViewAnalysis viewAnalysis) throws ParseException {
         Sheet sheet = new Sheet();
-        ViewAnalysis viewAnalysis = new ViewAnalysis(ads);
         SheetProperties sheetProp = new SheetProperties();
         sheetProp.setSheetId(1);
         sheetProp.setTitle("Анализ просмотров");
@@ -1201,14 +1317,14 @@ public class SheetsExample {
 
         }
         rData.add(new RowData().setValues(Arrays.asList(
-                getCellData("ВСЕГО:", new Color(239, 239, 239, 255), true, "" , new Color(102,102,102)),
+                getCellData("ВСЕГО:", new Color(239, 239, 239, 255), true, "", new Color(102, 102, 102)),
                 getCellData("=СУММ(B2:B11)", new Color(239, 239, 239, 255), false, "CENTER"),
-                getCellData("ВСЕГО:", new Color(239, 239, 239, 255), true, "" , new Color(102,102,102)),
+                getCellData("ВСЕГО:", new Color(239, 239, 239, 255), true, "", new Color(102, 102, 102)),
                 getCellData("=СУММ(D2:D11)", new Color(239, 239, 239, 255), false, "CENTER"),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
-                getCellData("ВСЕГО:", new Color(239, 239, 239, 255), true, "" , new Color(102,102,102)),
+                getCellData("ВСЕГО:", new Color(239, 239, 239, 255), true, "", new Color(102, 102, 102)),
                 getCellData("=СУММ(G2:G11)", new Color(239, 239, 239, 255), false, "CENTER"),
-                getCellData("ВСЕГО:", new Color(239, 239, 239, 255), true, "" , new Color(102,102,102)),
+                getCellData("ВСЕГО:", new Color(239, 239, 239, 255), true, "", new Color(102, 102, 102)),
                 getCellData("=СУММ(I2:I11)", new Color(239, 239, 239, 255), false, "CENTER")
         )));
         rData.add(new RowData());
@@ -1225,9 +1341,9 @@ public class SheetsExample {
         )));
 
         // TODO Здесь делаем двухцветным и меняем размер шрифта
-        CellData cTest = getCellData("Всего просмотров за сегодня на Новых объ-ях", new Color(239, 239, 239, 255), true, "CENTER", new Color(102,102,102));
+        CellData cTest = getCellData("Всего просмотров за сегодня на Новых объ-ях", new Color(239, 239, 239, 255), true, "CENTER", new Color(102, 102, 102));
         cTest.setTextFormatRuns(Arrays.asList(
-                new TextFormatRun().setStartIndex(0).setFormat(new TextFormat().setFontSize(12) ),
+                new TextFormatRun().setStartIndex(0).setFormat(new TextFormat().setFontSize(12)),
                 new TextFormatRun()
                         .setStartIndex(17)
                         .setFormat(new TextFormat()
@@ -1235,9 +1351,9 @@ public class SheetsExample {
                                 .setFontSize(12)
                         )
         ));
-        CellData cTest2 = getCellData("Всего просмотров за сегодня на Поднятых объ-ях", new Color(239, 239, 239, 255), true, "CENTER", new Color(102,102,102));
+        CellData cTest2 = getCellData("Всего просмотров за сегодня на Поднятых объ-ях", new Color(239, 239, 239, 255), true, "CENTER", new Color(102, 102, 102));
         cTest2.setTextFormatRuns(Arrays.asList(
-                new TextFormatRun().setStartIndex(0).setFormat(new TextFormat().setFontSize(12) ),
+                new TextFormatRun().setStartIndex(0).setFormat(new TextFormat().setFontSize(12)),
                 new TextFormatRun()
                         .setStartIndex(17)
                         .setFormat(new TextFormat()
@@ -1325,15 +1441,15 @@ public class SheetsExample {
             }
         }
         rData.add(new RowData().setValues(Arrays.asList(
-                getCellData("За всё время", new Color(239, 239, 239, 255), true, "" , new Color(102,102,102)),
-                getCellData("=СУММ(B17:B40)", new Color(239, 239, 239, 255),false,"CENTER"),
-                getCellData("=СУММ(C17:C40)", new Color(239, 239, 239, 255),false,"CENTER"),
-                getCellData("=СУММ(D17:D40)", new Color(239, 239, 239, 255),false,"CENTER"),
+                getCellData("За всё время", new Color(239, 239, 239, 255), true, "", new Color(102, 102, 102)),
+                getCellData("=СУММ(B17:B40)", new Color(239, 239, 239, 255), false, "CENTER"),
+                getCellData("=СУММ(C17:C40)", new Color(239, 239, 239, 255), false, "CENTER"),
+                getCellData("=СУММ(D17:D40)", new Color(239, 239, 239, 255), false, "CENTER"),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
-                getCellData("За всё время", new Color(239, 239, 239, 255), true, "" , new Color(102,102,102)),
-                getCellData("=СУММ(G17:G40)", new Color(239, 239, 239, 255),false,"CENTER"),
-                getCellData("=СУММ(H17:H40)", new Color(239, 239, 239, 255),false,"CENTER"),
-                getCellData("=СУММ(I17:I40)", new Color(239, 239, 239, 255),false,"CENTER")
+                getCellData("За всё время", new Color(239, 239, 239, 255), true, "", new Color(102, 102, 102)),
+                getCellData("=СУММ(G17:G40)", new Color(239, 239, 239, 255), false, "CENTER"),
+                getCellData("=СУММ(H17:H40)", new Color(239, 239, 239, 255), false, "CENTER"),
+                getCellData("=СУММ(I17:I40)", new Color(239, 239, 239, 255), false, "CENTER")
         )));
         rData.add(new RowData());
 
@@ -1347,9 +1463,9 @@ public class SheetsExample {
                 getCellData("Вчера", new Color(0, 0, 0, 0), true, "RIGHT"),
                 getCellData(viewAnalysis.tenDays.get(1), new Color(0, 0, 0, 0))
         )));
-        CellData cTest3 = getCellData("Всего просмотров за вчерашний день на Новых объ-ях", new Color(239, 239, 239, 255), true, "CENTER", new Color(102,102,102));
+        CellData cTest3 = getCellData("Всего просмотров за вчерашний день на Новых объ-ях", new Color(239, 239, 239, 255), true, "CENTER", new Color(102, 102, 102));
         cTest3.setTextFormatRuns(Arrays.asList(
-                new TextFormatRun().setStartIndex(0).setFormat(new TextFormat().setFontSize(12) ),
+                new TextFormatRun().setStartIndex(0).setFormat(new TextFormat().setFontSize(12)),
                 new TextFormatRun()
                         .setStartIndex(17)
                         .setFormat(new TextFormat()
@@ -1357,9 +1473,9 @@ public class SheetsExample {
                                 .setFontSize(12)
                         )
         ));
-        CellData cTest4 = getCellData("Всего просмотров за вчерашний день на Поднятых объ-ях", new Color(239, 239, 239, 255), true, "CENTER", new Color(102,102,102));
+        CellData cTest4 = getCellData("Всего просмотров за вчерашний день на Поднятых объ-ях", new Color(239, 239, 239, 255), true, "CENTER", new Color(102, 102, 102));
         cTest4.setTextFormatRuns(Arrays.asList(
-                new TextFormatRun().setStartIndex(0).setFormat(new TextFormat().setFontSize(12) ),
+                new TextFormatRun().setStartIndex(0).setFormat(new TextFormat().setFontSize(12)),
                 new TextFormatRun()
                         .setStartIndex(17)
                         .setFormat(new TextFormat()
@@ -1446,15 +1562,15 @@ public class SheetsExample {
             }
         }
         rData.add(new RowData().setValues(Arrays.asList(
-                getCellData("За всё время", new Color(239, 239, 239, 255), true, "" , new Color(102,102,102)),
-                getCellData("=СУММ(B46:B69)", new Color(239, 239, 239, 255),false,"CENTER"),
-                getCellData("=СУММ(C46:C69)", new Color(239, 239, 239, 255),false,"CENTER"),
-                getCellData("=СУММ(D46:D69)", new Color(239, 239, 239, 255),false,"CENTER"),
+                getCellData("За всё время", new Color(239, 239, 239, 255), true, "", new Color(102, 102, 102)),
+                getCellData("=СУММ(B46:B69)", new Color(239, 239, 239, 255), false, "CENTER"),
+                getCellData("=СУММ(C46:C69)", new Color(239, 239, 239, 255), false, "CENTER"),
+                getCellData("=СУММ(D46:D69)", new Color(239, 239, 239, 255), false, "CENTER"),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
-                getCellData("За всё время", new Color(239, 239, 239, 255), true, "" , new Color(102,102,102)),
-                getCellData("=СУММ(G46:G69)", new Color(239, 239, 239, 255),false,"CENTER"),
-                getCellData("=СУММ(H46:H69)", new Color(239, 239, 239, 255),false,"CENTER"),
-                getCellData("=СУММ(I46:I69)", new Color(239, 239, 239, 255),false,"CENTER")
+                getCellData("За всё время", new Color(239, 239, 239, 255), true, "", new Color(102, 102, 102)),
+                getCellData("=СУММ(G46:G69)", new Color(239, 239, 239, 255), false, "CENTER"),
+                getCellData("=СУММ(H46:H69)", new Color(239, 239, 239, 255), false, "CENTER"),
+                getCellData("=СУММ(I46:I69)", new Color(239, 239, 239, 255), false, "CENTER")
         )));
 
         sheet.setMerges(Arrays.asList(
@@ -1631,6 +1747,31 @@ public class SheetsExample {
         return rowData;
     }
 
+    private static com.google.api.services.sheets.v4.model.Color convertToGColor(Color color) {
+        return convertToGColor(color.getRed(), color.getGreen(), color.getBlue() - 1);
+    }
+
+    private static com.google.api.services.sheets.v4.model.Color convertToGColor(int r, int g, int b) {
+        return convertToGColor(r, g, b, -1);
+    }
+
+    private static com.google.api.services.sheets.v4.model.Color convertToGColor(int r, int g, int b, int a) {
+
+        com.google.api.services.sheets.v4.model.Color result = new com.google.api.services.sheets.v4.model.Color();
+        Color color;
+        if (a != -1) {
+            color = convertRgba(new Color(r, g, b, a));
+        } else {
+            color = new Color(r, g, b);
+        }
+
+        result.setRed((float) color.getRed() / 255);
+        result.setGreen((float) color.getGreen() / 255);
+        result.setBlue((float) color.getBlue() / 255);
+
+        return result;
+    }
+
     private static CellData getCellData(Object val) {
         return getCellData(val, new Color(255, 255, 255));
     }
@@ -1651,12 +1792,8 @@ public class SheetsExample {
         CellData cell = new CellData();
 
         CellFormat format = new CellFormat();
-        com.google.api.services.sheets.v4.model.Color color = new com.google.api.services.sheets.v4.model.Color();
-
-        bgColor = convertRgba(bgColor);
-        color.setRed((float) bgColor.getRed() / 255);
-        color.setGreen((float) bgColor.getGreen() / 255);
-        color.setBlue((float) bgColor.getBlue() / 255);
+        com.google.api.services.sheets.v4.model.Color color =
+                convertToGColor(bgColor.getRed(), bgColor.getGreen(), bgColor.getBlue(), bgColor.getAlpha());
 
         TextFormat textFormat = new TextFormat();
         if (textColor != null) {
