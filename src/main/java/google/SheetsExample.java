@@ -81,6 +81,9 @@ public class SheetsExample {
 
         int descLength = 0;
 
+        //TODO Здесь можешь регулировать какие фильтры будут отключены
+//        filters.setDate(false);
+
         boolean offlineMod = false;
 //        if (filters.isDescription()) {
 //            for (Ad ad : ads)
@@ -185,61 +188,71 @@ public class SheetsExample {
 
                 return String.format("http://%s:8081/api/report/%s?fileID=%s", localHost.getHostAddress(), title, fileId);
             } else {
-                if (filters.isDate()) {
-                    try {
-//                        List<Request> requests = new ArrayList<>();
-//                        requests.add(createCellSizeRequest(0, 4, 150));
-//                        requests.add(createCellSizeRequest(4, 5, 20));
-//                        requests.add(createCellSizeRequest(5, 9, 150));
+                try {
+                    boolean cellSize = true;
+                    int reqSize = 6000, fail = 1;
+                    List<RowData> tmpData = new ArrayList<>(reqSize + 1);
+                    Iterator<RowData> rIter = rData.iterator();
+                    while (true) {
+                        if (tmpData.size() > reqSize || !rIter.hasNext()) {
+                            if (tmpData.size() == 0)
+                                break;
 
+                            List<Request> requests = new ArrayList<>();
+                            if (cellSize) {
+                                if (filters.isDate()) {
+                                    requests.add(createCellSizeRequest(1, 0, 4, 150));
+                                    requests.add(createCellSizeRequest(1, 4, 5, 20));
+                                    requests.add(createCellSizeRequest(1, 5, 9, 150));
 
-                        boolean cellSize = true;
-                        int reqSize = 6000, fail = 1;
-                        List<RowData> tmpData = new ArrayList<>(reqSize + 1);
-                        Iterator<RowData> rIter = rData.iterator();
-                        while (true) {
-                            if (tmpData.size() > reqSize || !rIter.hasNext()) {
-                                if (tmpData.size() == 0)
+                                    // Ширина столбцов на главной
+                                    requests.add(createCellSizeRequest(0, 17, 18, 105));
+
+                                    // Добавляем бордер
+                                    requests.add(createBorderRequest(1, 0, 12, 0, 4));
+                                    //TODO Добавить здесь остальные рамки
+
+                                } else {
+                                    //TODO Поставить правильный index столбца, когда статистика отключена
+                                    requests.add(createCellSizeRequest(0, 17, 18, 105));
+                                }
+
+                                //TODO Добавить проверки на отключение этих ячеек ( Например позицию можно отключить )
+                                // Ширина ячеек
+                                requests.add(createCellSizeRequest(0, 0, 1, 70));
+                                requests.add(createCellSizeRequest(0, 3, 4, 85));
+                            }
+
+                            requests.add(new Request().setAppendCells(new AppendCellsRequest().setSheetId(0).setFields("*").setRows(tmpData)));
+                            BatchUpdateSpreadsheetRequest body = new BatchUpdateSpreadsheetRequest().setRequests(requests);
+
+                            try {
+                                sheetsService.spreadsheets().batchUpdate(response.getSpreadsheetId(), body).execute();
+                                Thread.sleep(500);
+
+                                cellSize = false;
+                                tmpData.clear();
+                            } catch (Exception e) {
+                                e.printStackTrace();
+
+                                if (fail++ > 3)
                                     break;
 
-                                List<Request> requests = new ArrayList<>();
-                                if (cellSize) {
-                                    requests.add(createCellSizeRequest(0, 4, 150));
-                                    requests.add(createCellSizeRequest(4, 5, 20));
-                                    requests.add(createCellSizeRequest(5, 9, 150));
-                                }
+                                rData.addAll(0, tmpData);
+                                tmpData.clear();
 
-                                requests.add(new Request().setAppendCells(new AppendCellsRequest().setSheetId(0).setFields("*").setRows(tmpData)));
-                                BatchUpdateSpreadsheetRequest body = new BatchUpdateSpreadsheetRequest().setRequests(requests);
-
-                                try {
-                                    sheetsService.spreadsheets().batchUpdate(response.getSpreadsheetId(), body).execute();
-                                    Thread.sleep(500);
-
-                                    cellSize = false;
-                                    tmpData.clear();
-                                } catch (Exception e) {
-                                    e.printStackTrace();
-
-                                    if (fail++ > 3)
-                                        break;
-
-                                    rData.addAll(0, tmpData);
-                                    tmpData.clear();
-
-                                    reqSize /= 2;
-                                    rIter = rData.iterator();
-                                } finally {
-                                    System.out.println(fail);
-                                }
-                            } else {
-                                tmpData.add(rIter.next());
-                                rIter.remove();
+                                reqSize /= 2;
+                                rIter = rData.iterator();
+                            } finally {
+                                System.out.println(fail);
                             }
+                        } else {
+                            tmpData.add(rIter.next());
+                            rIter.remove();
                         }
-                    } catch (Exception ignore) {
-                        ignore.printStackTrace();
                     }
+                } catch (Exception ignore) {
+                    ignore.printStackTrace();
                 }
 
                 return response.getSpreadsheetUrl();
@@ -251,6 +264,29 @@ public class SheetsExample {
                     "Не удалось получить ответ от Google API" :
                     "Не удалось сформировать отчёт"));
         }
+    }
+
+    private static Request createBorderRequest(Integer SheetId, Integer startRow, Integer endRow, Integer startCol, Integer endCol) {
+        return new Request().setUpdateBorders(new UpdateBordersRequest()
+                .setRange(new GridRange()
+                        .setSheetId(SheetId)
+                        .setStartRowIndex(startRow)
+                        .setEndRowIndex(endRow)
+                        .setStartColumnIndex(startCol)
+                        .setEndColumnIndex(endCol)
+                )
+                .setTop(createBorder())
+                .setRight(createBorder())
+                .setBottom(createBorder())
+                .setLeft(createBorder())
+        );
+    }
+
+    private static Border createBorder() {
+        return new Border()
+                .setStyle("SOLID")
+                .setWidth(1)
+                .setColor(new com.google.api.services.sheets.v4.model.Color());
     }
 
     private static RowData getRowData(ReportFilter filters, boolean offlineMod, Ad ad, ColorData colorData) {
@@ -268,7 +304,8 @@ public class SheetsExample {
 
             double coff = (position / 00.7) / 100;
             int alpha = (int) (255 * (coff > 1 ? 0 : (1 - coff)));
-            clValues.add(getCellData(position, new Color(183, 225, 205, alpha)));
+            //TODO Пример как нужно центрировать ячейку
+            clValues.add(getCellData(position, new Color(183, 225, 205, alpha), false, "CENTER"));
         }
 
         String titleName = "";
@@ -582,12 +619,12 @@ public class SheetsExample {
         return rowVal;
     }
 
-    private static Request createCellSizeRequest(Integer startIndex, Integer endIndex, Integer size) {
+    private static Request createCellSizeRequest(Integer SheetId, Integer startIndex, Integer endIndex, Integer size) {
         return new Request().setUpdateDimensionProperties(
                 new UpdateDimensionPropertiesRequest().setRange
                         (
                                 new DimensionRange()
-                                        .setSheetId(1)
+                                        .setSheetId(SheetId)
                                         .setDimension("COLUMNS")
                                         .setStartIndex(startIndex).setEndIndex(endIndex)
                         )
@@ -1489,13 +1526,16 @@ public class SheetsExample {
         return getCellData(val, new Color(255, 255, 255));
     }
 
-    private static CellData getCellData(Object val, java.awt.Color userColor) {
-        return getCellData(val, userColor, false);
+    private static CellData getCellData(Object val, Color userColor) {
+        return getCellData(val, userColor, false, "");
     }
 
     private static CellData getCellData(Object val, Color userColor, Boolean isBold) {
-        CellData cell = new CellData();
+        return getCellData(val, userColor, isBold, "");
+    }
 
+    private static CellData getCellData(Object val, Color userColor, Boolean isBold, String alignment) {
+        CellData cell = new CellData();
 
         CellFormat format = new CellFormat();
         com.google.api.services.sheets.v4.model.Color color = new com.google.api.services.sheets.v4.model.Color();
@@ -1505,13 +1545,16 @@ public class SheetsExample {
         color.setGreen((float) userColor.getGreen() / 255);
         color.setBlue((float) userColor.getBlue() / 255);
 
-        format.setBackgroundColor(color);
+        if (userColor.getRGB() != -1)
+            format.setBackgroundColor(color);
+
+        if (!alignment.isEmpty())
+            format.setHorizontalAlignment(alignment);
+
         if (isBold)
             format.setTextFormat(new TextFormat().setBold(true));
 
-
-//        System.out.println(userColor.getRGB());
-        if (userColor.getRGB() != -1)
+        if (userColor.getRGB() != -1 || isBold || !alignment.isEmpty())
             cell.setUserEnteredFormat(format);
 
         ExtendedValue exValue = new ExtendedValue();
