@@ -40,7 +40,7 @@ public class Task {
     private String id;
     private Type type;
 
-    private Boolean saveReport = false;
+    private Boolean saveReport = true;
 
     private String token;
     private String title = "";

@@ -27,6 +27,7 @@ import com.google.api.services.drive.model.Permission;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.SheetsScopes;
 import com.google.api.services.sheets.v4.model.*;
+import jdk.nashorn.internal.ir.annotations.Ignore;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.xssf.usermodel.*;
 import parser.Ad;
@@ -206,19 +207,37 @@ public class SheetsExample {
                                     requests.add(createCellSizeRequest(1, 5, 9, 150));
 
                                     // Ширина столбцов на главной
+                                    //Доставка
                                     requests.add(createCellSizeRequest(0, 17, 18, 105));
+                                    //Понижение цен
+                                    requests.add(createCellSizeRequest(0, 3, 4, 86));
+                                    //id продавца
+                                    requests.add(createCellSizeRequest(0, 19, 20, 105));
+                                    //id продавца
+                                    requests.add(createCellSizeRequest(0, 19, 20, 105));
 
                                     // Добавляем бордер
                                     requests.add(createBorderRequest(1, 0, 12, 0, 4));
+                                    requests.add(createBorderRequest(1, 0, 12, 5, 9));
+                                    requests.add(createBorderRequest(1, 13, 41, 0, 4));
+                                    requests.add(createBorderRequest(1, 13, 41, 5, 9));
+                                    requests.add(createBorderRequest(1, 42, 70, 0, 4));
+                                    requests.add(createBorderRequest(1, 42, 70, 5, 9));
                                     //TODO Добавить здесь остальные рамки
 
                                 } else {
                                     //TODO Поставить правильный index столбца, когда статистика отключена
+                                    //Доставка
                                     requests.add(createCellSizeRequest(0, 17, 18, 105));
+                                    //Понижение цен
+                                    requests.add(createCellSizeRequest(0, 3, 4, 86));
+                                    //id продавца
+                                    requests.add(createCellSizeRequest(0, 19, 20, 105));
+                                    //id продавца
+                                    requests.add(createCellSizeRequest(0, 19, 20, 105));
                                 }
 
                                 //TODO Добавить проверки на отключение этих ячеек ( Например позицию можно отключить )
-                                // Ширина ячеек
                                 requests.add(createCellSizeRequest(0, 0, 1, 70));
                                 requests.add(createCellSizeRequest(0, 3, 4, 85));
                             }
@@ -305,7 +324,7 @@ public class SheetsExample {
             double coff = (position / 00.7) / 100;
             int alpha = (int) (255 * (coff > 1 ? 0 : (1 - coff)));
             //TODO Пример как нужно центрировать ячейку
-            clValues.add(getCellData(position, new Color(183, 225, 205, alpha), false, "CENTER"));
+            clValues.add(getCellData(position, new Color(183, 225, 205, alpha), true, "CENTER" ));
         }
 
         String titleName = "";
@@ -329,11 +348,11 @@ public class SheetsExample {
 
         try {
             if (ad.getPriceDown())
-                clValues.add(getCellData(1));
+                clValues.add(getCellData(1, new Color(199,217,244, 255), false, "CENTER" ));
             else
-                clValues.add(getCellData(0));
+                clValues.add(getCellData(0, new Color(0, 0, 0, 0), false, "CENTER" ));
         } catch (Exception ignore) {
-            clValues.add(getCellData(0));
+            clValues.add(getCellData(0, new Color(0, 0, 0, 0), false, "CENTER" ));
         }
 
         String views = "";
@@ -555,10 +574,13 @@ public class SheetsExample {
         try {
             if (ad.getDelivery()) {
                 delivery = 1;
+                clValues.add(getCellData(delivery, new Color(183, 225, 205, 255), false, "CENTER" ));
+            } else {
+                clValues.add(getCellData(delivery, new Color(0, 0, 0, 0), false, "CENTER" ));
             }
         } catch (Exception ignore) {
+            clValues.add(getCellData(delivery, new Color(0, 0, 0, 0), false, "CENTER" ));
         }
-        clValues.add(getCellData(delivery));
 
         if (filters.isSellerName()) {
             String seller = "";
@@ -589,7 +611,7 @@ public class SheetsExample {
                 phone = ad.getPhone();
             } catch (Exception ignore) {
             }
-            clValues.add(getCellData(phone));
+            clValues.add(getCellData(phone, new Color(0, 0, 0, 0), false, "CENTER"));
         }
 
         String activeAd = "0";
@@ -597,7 +619,7 @@ public class SheetsExample {
             activeAd = ad.getActiveAd();
         } catch (Exception ignore) {
         }
-        clValues.add(getCellData(activeAd));
+        clValues.add(getCellData(activeAd, new Color(0, 0, 0, 0), false, "CENTER" ));
 
         String address = "";
         try {
@@ -1103,10 +1125,15 @@ public class SheetsExample {
     }
 
     private static Double getAvg(Integer val, Integer count) {
-        if (count == 0)
+        try {
+            if (count == 0)
+                return 0.0;
+            else {
+                return (double) Math.round((val / (count * 1.0)) * 100.0) / 100.0;
+            }
+        } catch (Exception e) {
             return 0.0;
-        else
-            return (double) Math.round(val / (count * 1.0));
+        }
     }
 
     private static Sheet getViewSheet(List<Ad> ads) throws ParseException {
@@ -1132,53 +1159,91 @@ public class SheetsExample {
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
                 getCellData("Всего просмотров за 10 дн. на всех объявлениях", new Color(207, 226, 243, 255), true),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
-                getCellData("Всего просмотров за 10 дн. на всех объявлениях", new Color(207, 226, 243, 255), true)
+                getCellData("В среднем просмотров за 10 дн. на всех объявлениях", new Color(207, 226, 243, 255), true)
         )));
 
 
+        List<Integer> viewAnalysisAr = new ArrayList<Integer>();
+        List<Integer> numOfUpAdAr = new ArrayList<Integer>();
+        List<Integer> totalViewOfAdAr = new ArrayList<Integer>();
+        List<Integer> avgViewOfAdAr = new ArrayList<Integer>();
+        for (int j = 0; j < 10; j++) {
+            try {
+                viewAnalysisAr.add(viewAnalysis.numOfNewAd[j]);
+            } catch (Exception e) {
+                viewAnalysisAr.add(0);
+            }
+            try {
+                numOfUpAdAr.add(viewAnalysis.numOfUpAd[j]);
+            } catch (Exception e) {
+                viewAnalysisAr.add(0);
+            }
+            try {
+                totalViewOfAdAr.add(viewAnalysis.totalViewOfAd[j]);
+            } catch (Exception e) {
+                viewAnalysisAr.add(0);
+            }
+            try {
+                avgViewOfAdAr.add(viewAnalysis.avgViewOfAd[j]);
+            } catch (Exception e) {
+                viewAnalysisAr.add(0);
+            }
+        }
+        int maxViewAnalysis = Collections.max(viewAnalysisAr);
+        int maxNumOfUpAd = Collections.max(numOfUpAdAr);
+        int maxTotalViewOfAd = Collections.max(totalViewOfAdAr);
+        int maxAvgViewOfAd = Collections.max(avgViewOfAdAr);
+
         for (int i = 0; i < 10; i++) {
-            rData.add(new RowData().setValues(Arrays.asList(
-                    getCellData(viewAnalysis.tenDays.get(i), new Color(232, 246, 239, 255)),
-                    new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.numOfNewAd[i])),
-                    getCellData(viewAnalysis.tenDays.get(i), new Color(232, 246, 239, 255)),
-                    new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.numOfUpAd[i])),
-                    new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
-                    getCellData(viewAnalysis.tenDays.get(i), new Color(232, 246, 239, 255)),
-                    new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.totalViewOfAd[i])),
-                    getCellData(viewAnalysis.tenDays.get(i), new Color(232, 246, 239, 255)),
-                    new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.avgViewOfAd[i]))
-            )));
+
+            int alphaViewAnalysis = (int) (255 * getAvg(viewAnalysis.numOfNewAd[i], maxViewAnalysis));
+            int alphaNumOfUpAd = (int) (255 * getAvg(viewAnalysis.numOfUpAd[i], maxNumOfUpAd));
+            int alphaTotalViewOfAd = (int) (255 * getAvg(viewAnalysis.totalViewOfAd[i], maxTotalViewOfAd));
+            int alphaAvgViewOfAd = (int) (255 * getAvg(viewAnalysis.avgViewOfAd[i], maxAvgViewOfAd));
+
+                rData.add(new RowData().setValues(Arrays.asList(
+                        getCellData(viewAnalysis.tenDays.get(i), new Color(232, 246, 239, 255), false, "RIGHT"),
+                        getCellData(viewAnalysis.numOfNewAd[i], new Color(0, 243, 0, alphaViewAnalysis), false, "CENTER"),
+                        getCellData(viewAnalysis.tenDays.get(i), new Color(232, 246, 239, 255), false, "RIGHT"),
+                        getCellData(viewAnalysis.numOfUpAd[i], new Color(0, 243, 0, alphaNumOfUpAd), false, "CENTER"),
+                        new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                        getCellData(viewAnalysis.tenDays.get(i), new Color(232, 246, 239, 255), false, "RIGHT"),
+                        getCellData(viewAnalysis.totalViewOfAd[i], new Color(0, 243, 0, alphaTotalViewOfAd), false, "CENTER"),
+                        getCellData(viewAnalysis.tenDays.get(i), new Color(232, 246, 239, 255), false, "RIGHT"),
+                        getCellData(viewAnalysis.avgViewOfAd[i], new Color(0, 243, 0, alphaAvgViewOfAd), false, "CENTER")
+                )));
+
         }
         rData.add(new RowData().setValues(Arrays.asList(
                 getCellData("ВСЕГО:", new Color(239, 239, 239, 255), true),
-                getCellData("=СУММ(B2:B11)", new Color(239, 239, 239, 255)),
+                getCellData("=СУММ(B2:B11)", new Color(239, 239, 239, 255), false, "CENTER"),
                 getCellData("ВСЕГО:", new Color(239, 239, 239, 255), true),
-                getCellData("=СУММ(D2:D11)", new Color(239, 239, 239, 255)),
+                getCellData("=СУММ(D2:D11)", new Color(239, 239, 239, 255), false, "CENTER"),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
                 getCellData("ВСЕГО:", new Color(239, 239, 239, 255), true),
-                getCellData("=СУММ(G2:G11)", new Color(239, 239, 239, 255)),
+                getCellData("=СУММ(G2:G11)", new Color(239, 239, 239, 255), false, "CENTER"),
                 getCellData("ВСЕГО:", new Color(239, 239, 239, 255), true),
-                getCellData("=СУММ(I2:I11)", new Color(239, 239, 239, 255))
+                getCellData("=СУММ(I2:I11)", new Color(239, 239, 239, 255), false, "CENTER")
         )));
         rData.add(new RowData());
 
         // За сегодня ( По часам )
         rData.add(new RowData().setValues(Arrays.asList(
-                getCellData("Сегодня", new Color(0, 0, 0, 0), true),
+                getCellData("Сегодня", new Color(0, 0, 0, 0), true, "RIGHT"),
                 getCellData(viewAnalysis.tenDays.get(0), new Color(0, 0, 0, 0)),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
-                getCellData("Сегодня", new Color(0, 0, 0, 0), true),
+                getCellData("Сегодня", new Color(0, 0, 0, 0), true, "RIGHT"),
                 getCellData(viewAnalysis.tenDays.get(0), new Color(0, 0, 0, 0))
         )));
         rData.add(new RowData().setValues(Arrays.asList(
-                getCellData("Всего просмотров за сегодня на Новых объ-ях", new Color(239, 239, 239, 255), true),
+                getCellData("Всего просмотров за сегодня на Новых объ-ях", new Color(239, 239, 239, 255), true, "CENTER"),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
-                getCellData("Всего просмотров за сегодня на Поднятых объ-ях", new Color(239, 239, 239, 255), true)
+                getCellData("Всего просмотров за сегодня на Поднятых объ-ях", new Color(239, 239, 239, 255), true, "CENTER")
         )));
         Color headerBgColor = new Color(207, 226, 243);
 
@@ -1252,34 +1317,34 @@ public class SheetsExample {
         }
         rData.add(new RowData().setValues(Arrays.asList(
                 getCellData("За всё время", new Color(239, 239, 239, 255), true),
-                getCellData("=СУММ(B7:B40)", new Color(239, 239, 239, 255)),
-                getCellData("=СУММ(C7:C40)", new Color(239, 239, 239, 255)),
-                getCellData("=СУММ(D7:D40)", new Color(239, 239, 239, 255)),
+                getCellData("=СУММ(B17:B40)", new Color(239, 239, 239, 255)),
+                getCellData("=СУММ(C17:C40)", new Color(239, 239, 239, 255)),
+                getCellData("=СУММ(D17:D40)", new Color(239, 239, 239, 255)),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
                 getCellData("За всё время", new Color(239, 239, 239, 255), true),
-                getCellData("=СУММ(G7:G40)", new Color(239, 239, 239, 255)),
-                getCellData("=СУММ(H7:H40)", new Color(239, 239, 239, 255)),
-                getCellData("=СУММ(I7:I40)", new Color(239, 239, 239, 255))
+                getCellData("=СУММ(G17:G40)", new Color(239, 239, 239, 255)),
+                getCellData("=СУММ(H17:H40)", new Color(239, 239, 239, 255)),
+                getCellData("=СУММ(I17:I40)", new Color(239, 239, 239, 255))
         )));
         rData.add(new RowData());
 
         // За вчера ( По часам )
         rData.add(new RowData().setValues(Arrays.asList(
-                getCellData("Вчера", new Color(0, 0, 0, 0), true),
+                getCellData("Вчера", new Color(0, 0, 0, 0), true, "RIGHT"),
                 getCellData(viewAnalysis.tenDays.get(1), new Color(0, 0, 0, 0)),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
-                getCellData("Вчера", new Color(0, 0, 0, 0), true),
+                getCellData("Вчера", new Color(0, 0, 0, 0), true, "RIGHT"),
                 getCellData(viewAnalysis.tenDays.get(1), new Color(0, 0, 0, 0))
         )));
         rData.add(new RowData().setValues(Arrays.asList(
-                getCellData("Всего просмотров за вчерашний день на Новых объ-ях", new Color(239, 239, 239, 255), true),
+                getCellData("Всего просмотров за вчерашний день на Новых объ-ях", new Color(239, 239, 239, 255), true, "CENTER"),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
-                getCellData("Всего просмотров за вчерашний день на Поднятых объ-ях", new Color(239, 239, 239, 255), true)
+                getCellData("Всего просмотров за вчерашний день на Поднятых объ-ях", new Color(239, 239, 239, 255), true, "CENTER")
         )));
         CellData header4 = getCellData("Кол-во объявлений", headerBgColor, true);
         CellData header5 = getCellData("Кол-во просмотров", headerBgColor, true);
@@ -1369,7 +1434,9 @@ public class SheetsExample {
                 generateRange(1, 0, 1, 5, 7),
                 generateRange(1, 0, 1, 7, 9),
                 generateRange(1, 14, 15, 0, 4),
-                generateRange(1, 14, 15, 5, 9)
+                generateRange(1, 14, 15, 5, 9),
+                generateRange(1, 43, 44, 0, 4),
+                generateRange(1, 43, 44, 5, 9)
         ));
 
         // -------------------- SET VALUES ( END ) --------------------
@@ -1513,6 +1580,7 @@ public class SheetsExample {
         }
 
         CellData header12 = getCellData("ID продавца", headerBgColor, true);
+        header12.setNote("Подкрашеные ячейки означают что это магазин");
         clHeaders.add(header12);
         if (filters.isPhone()) {
             CellData header13 = getCellData("Телефон", headerBgColor, true);
