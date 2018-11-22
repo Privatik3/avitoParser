@@ -49,10 +49,14 @@ public class ViewAnalysis {
 
         for (Ad ad : ads) {
 
+//            if (ad.getDateApplication() == null) {
+//                System.out.println();
+//            }
+
             // Количество Новых обьявлений
             int dayOfCreationIndex = tenDays.indexOf(ad.getDateApplication());
-            if (dayOfCreationIndex != -1)
-                numOfNewAd[dayOfCreationIndex]++;
+            if (dayOfCreationIndex != -1 || ad.getDateApplication() == null)
+                numOfNewAd[dayOfCreationIndex != -1 ? dayOfCreationIndex : 0]++;
 
             // Количество Апнутых обьявлений
             int dayOfUpdateIndex = tenDays.indexOf(ad.getData().replaceAll("\\s.*", ""));

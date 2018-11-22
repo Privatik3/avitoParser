@@ -1159,7 +1159,7 @@ public class SheetsExample {
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
 
                 // TODO Меняем цвет текста в ячейке
-                getCellData("Всего просмотров за 10 дн. на всех объявлениях", new Color(207, 226, 243, 255), true, "", new Color(255, 255, 5)),
+                getCellData("Всего просмотров за 10 дн. на всех объявлениях", new Color(207, 226, 243, 255), true),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
                 getCellData("В среднем просмотров за 10 дн. на всех объявлениях", new Color(207, 226, 243, 255), true)
         )));
@@ -1217,14 +1217,14 @@ public class SheetsExample {
 
         }
         rData.add(new RowData().setValues(Arrays.asList(
-                getCellData("ВСЕГО:", new Color(239, 239, 239, 255), true),
+                getCellData("ВСЕГО:", new Color(239, 239, 239, 255), true, "" , new Color(102,102,102)),
                 getCellData("=СУММ(B2:B11)", new Color(239, 239, 239, 255), false, "CENTER"),
-                getCellData("ВСЕГО:", new Color(239, 239, 239, 255), true),
+                getCellData("ВСЕГО:", new Color(239, 239, 239, 255), true, "" , new Color(102,102,102)),
                 getCellData("=СУММ(D2:D11)", new Color(239, 239, 239, 255), false, "CENTER"),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
-                getCellData("ВСЕГО:", new Color(239, 239, 239, 255), true),
+                getCellData("ВСЕГО:", new Color(239, 239, 239, 255), true, "" , new Color(102,102,102)),
                 getCellData("=СУММ(G2:G11)", new Color(239, 239, 239, 255), false, "CENTER"),
-                getCellData("ВСЕГО:", new Color(239, 239, 239, 255), true),
+                getCellData("ВСЕГО:", new Color(239, 239, 239, 255), true, "" , new Color(102,102,102)),
                 getCellData("=СУММ(I2:I11)", new Color(239, 239, 239, 255), false, "CENTER")
         )));
         rData.add(new RowData());
@@ -1243,11 +1243,22 @@ public class SheetsExample {
         // TODO Здесь делаем двухцветным и меняем размер шрифта
         CellData cTest = getCellData("Всего просмотров за сегодня на Новых объ-ях", new Color(239, 239, 239, 255), true, "CENTER", new Color(102,102,102));
         cTest.setTextFormatRuns(Arrays.asList(
+                new TextFormatRun().setStartIndex(0).setFormat(new TextFormat().setFontSize(12) ),
                 new TextFormatRun()
                         .setStartIndex(17)
                         .setFormat(new TextFormat()
                                 .setForegroundColor(new com.google.api.services.sheets.v4.model.Color().setRed(0.8f))
-                                .setFontSize(14)
+                                .setFontSize(12)
+                        )
+        ));
+        CellData cTest2 = getCellData("Всего просмотров за сегодня на Поднятых объ-ях", new Color(239, 239, 239, 255), true, "CENTER", new Color(102,102,102));
+        cTest2.setTextFormatRuns(Arrays.asList(
+                new TextFormatRun().setStartIndex(0).setFormat(new TextFormat().setFontSize(12) ),
+                new TextFormatRun()
+                        .setStartIndex(17)
+                        .setFormat(new TextFormat()
+                                .setForegroundColor(new com.google.api.services.sheets.v4.model.Color().setRed(0.8f))
+                                .setFontSize(12)
                         )
         ));
 
@@ -1257,7 +1268,7 @@ public class SheetsExample {
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
-                getCellData("Всего просмотров за сегодня на Поднятых объ-ях", new Color(239, 239, 239, 255), true, "CENTER")
+                cTest2
         )));
         Color headerBgColor = new Color(207, 226, 243);
 
@@ -1282,63 +1293,63 @@ public class SheetsExample {
             if (viewAnalysis.tdayTotalViewOfNewAd[i] != 0 && viewAnalysis.tdayTotalViewOfUpAd[i] != 0) {
                 rData.add(new RowData().setValues(Arrays.asList(
                         getCellData(i, new Color(0, 0, 0, 0), true),
-                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.tdayNumOfNewAd[i])),
-                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.tdayTotalViewOfNewAd[i])),
-                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue(getAvg(viewAnalysis.tdayTotalViewOfNewAd[i], viewAnalysis.tdayNumOfNewAd[i]))),
+                        getCellData(viewAnalysis.tdayNumOfNewAd[i], new Color(0, 0, 0, 0), false, "CENTER"),
+                        getCellData(viewAnalysis.tdayTotalViewOfNewAd[i], new Color(0, 0, 0, 0), false, "CENTER"),
+                        getCellData(getAvg(viewAnalysis.tdayTotalViewOfNewAd[i], viewAnalysis.tdayNumOfNewAd[i]), new Color(0, 0, 0, 0), false, "CENTER"),
                         new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
                         getCellData(i, new Color(0, 0, 0, 0), true),
-                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.tdayNumOfUpAd[i])),
-                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.tdayTotalViewOfUpAd[i])),
-                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue(getAvg(viewAnalysis.tdayTotalViewOfUpAd[i], viewAnalysis.tdayNumOfUpAd[i])))
+                        getCellData(viewAnalysis.tdayNumOfUpAd[i], new Color(0, 0, 0, 0), false, "CENTER"),
+                        getCellData(viewAnalysis.tdayTotalViewOfUpAd[i], new Color(0, 0, 0, 0), false, "CENTER"),
+                        getCellData(getAvg(viewAnalysis.tdayTotalViewOfUpAd[i], viewAnalysis.tdayNumOfUpAd[i]), new Color(0, 0, 0, 0), false, "CENTER")
                 )));
             } else if (viewAnalysis.tdayTotalViewOfNewAd[i] == 0 && viewAnalysis.tdayTotalViewOfUpAd[i] != 0) {
                 rData.add(new RowData().setValues(Arrays.asList(
                         getCellData(i, new Color(0, 0, 0, 0), true),
-                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
-                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
-                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
+                        getCellData(0, new Color(0, 0, 0, 0), false, "CENTER"),
+                        getCellData(0, new Color(0, 0, 0, 0), false, "CENTER"),
+                        getCellData(0, new Color(0, 0, 0, 0), false, "CENTER"),
                         new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
                         getCellData(i, new Color(0, 0, 0, 0), true),
-                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.tdayNumOfUpAd[i])),
-                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.tdayTotalViewOfUpAd[i])),
-                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue(getAvg(viewAnalysis.tdayTotalViewOfUpAd[i], viewAnalysis.tdayNumOfUpAd[i])))
+                        getCellData(viewAnalysis.tdayNumOfUpAd[i], new Color(0, 0, 0, 0), false, "CENTER"),
+                        getCellData(viewAnalysis.tdayTotalViewOfUpAd[i], new Color(0, 0, 0, 0), false, "CENTER"),
+                        getCellData(getAvg(viewAnalysis.tdayTotalViewOfUpAd[i], viewAnalysis.tdayNumOfUpAd[i]), new Color(0, 0, 0, 0), false, "CENTER")
                 )));
             } else if (viewAnalysis.tdayTotalViewOfNewAd[i] != 0 && viewAnalysis.tdayTotalViewOfUpAd[i] == 0) {
                 rData.add(new RowData().setValues(Arrays.asList(
                         getCellData(i, new Color(0, 0, 0, 0), true),
-                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.tdayNumOfNewAd[i])),
-                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.tdayTotalViewOfNewAd[i])),
-                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue(getAvg(viewAnalysis.tdayTotalViewOfNewAd[i], viewAnalysis.tdayNumOfNewAd[i]))),
+                        getCellData(viewAnalysis.tdayNumOfNewAd[i], new Color(0, 0, 0, 0), false, "CENTER"),
+                        getCellData(viewAnalysis.tdayTotalViewOfNewAd[i], new Color(0, 0, 0, 0), false, "CENTER"),
+                        getCellData(getAvg(viewAnalysis.tdayTotalViewOfNewAd[i], viewAnalysis.tdayNumOfNewAd[i]), new Color(0, 0, 0, 0), false, "CENTER"),
                         new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
                         getCellData(i, new Color(0, 0, 0, 0), true),
-                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
-                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
-                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0))
+                        getCellData(0, new Color(0, 0, 0, 0), false, "CENTER"),
+                        getCellData(0, new Color(0, 0, 0, 0), false, "CENTER"),
+                        getCellData(0, new Color(0, 0, 0, 0), false, "CENTER")
                 )));
             } else if (viewAnalysis.tdayTotalViewOfNewAd[i] == 0 && viewAnalysis.tdayTotalViewOfUpAd[i] == 0) {
                 rData.add(new RowData().setValues(Arrays.asList(
                         getCellData(i, new Color(0, 0, 0, 0), true),
-                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
-                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
-                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
+                        getCellData(0, new Color(0, 0, 0, 0), false, "CENTER"),
+                        getCellData(0, new Color(0, 0, 0, 0), false, "CENTER"),
+                        getCellData(0, new Color(0, 0, 0, 0), false, "CENTER"),
                         new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
                         getCellData(i, new Color(0, 0, 0, 0), true),
-                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
-                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
-                        new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0))
+                        getCellData(0, new Color(0, 0, 0, 0), false, "CENTER"),
+                        getCellData(0, new Color(0, 0, 0, 0), false, "CENTER"),
+                        getCellData(0, new Color(0, 0, 0, 0), false, "CENTER")
                 )));
             }
         }
         rData.add(new RowData().setValues(Arrays.asList(
-                getCellData("За всё время", new Color(239, 239, 239, 255), true),
-                getCellData("=СУММ(B17:B40)", new Color(239, 239, 239, 255)),
-                getCellData("=СУММ(C17:C40)", new Color(239, 239, 239, 255)),
-                getCellData("=СУММ(D17:D40)", new Color(239, 239, 239, 255)),
+                getCellData("За всё время", new Color(239, 239, 239, 255), true, "" , new Color(102,102,102)),
+                getCellData("=СУММ(B17:B40)", new Color(239, 239, 239, 255),false,"CENTER"),
+                getCellData("=СУММ(C17:C40)", new Color(239, 239, 239, 255),false,"CENTER"),
+                getCellData("=СУММ(D17:D40)", new Color(239, 239, 239, 255),false,"CENTER"),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
-                getCellData("За всё время", new Color(239, 239, 239, 255), true),
-                getCellData("=СУММ(G17:G40)", new Color(239, 239, 239, 255)),
-                getCellData("=СУММ(H17:H40)", new Color(239, 239, 239, 255)),
-                getCellData("=СУММ(I17:I40)", new Color(239, 239, 239, 255))
+                getCellData("За всё время", new Color(239, 239, 239, 255), true, "" , new Color(102,102,102)),
+                getCellData("=СУММ(G17:G40)", new Color(239, 239, 239, 255),false,"CENTER"),
+                getCellData("=СУММ(H17:H40)", new Color(239, 239, 239, 255),false,"CENTER"),
+                getCellData("=СУММ(I17:I40)", new Color(239, 239, 239, 255),false,"CENTER")
         )));
         rData.add(new RowData());
 
@@ -1352,13 +1363,33 @@ public class SheetsExample {
                 getCellData("Вчера", new Color(0, 0, 0, 0), true, "RIGHT"),
                 getCellData(viewAnalysis.tenDays.get(1), new Color(0, 0, 0, 0))
         )));
+        CellData cTest3 = getCellData("Всего просмотров за вчерашний день на Новых объ-ях", new Color(239, 239, 239, 255), true, "CENTER", new Color(102,102,102));
+        cTest3.setTextFormatRuns(Arrays.asList(
+                new TextFormatRun().setStartIndex(0).setFormat(new TextFormat().setFontSize(12) ),
+                new TextFormatRun()
+                        .setStartIndex(17)
+                        .setFormat(new TextFormat()
+                                .setForegroundColor(new com.google.api.services.sheets.v4.model.Color().setRed(0.8f))
+                                .setFontSize(12)
+                        )
+        ));
+        CellData cTest4 = getCellData("Всего просмотров за вчерашний день на Поднятых объ-ях", new Color(239, 239, 239, 255), true, "CENTER", new Color(102,102,102));
+        cTest4.setTextFormatRuns(Arrays.asList(
+                new TextFormatRun().setStartIndex(0).setFormat(new TextFormat().setFontSize(12) ),
+                new TextFormatRun()
+                        .setStartIndex(17)
+                        .setFormat(new TextFormat()
+                                .setForegroundColor(new com.google.api.services.sheets.v4.model.Color().setRed(0.8f))
+                                .setFontSize(12)
+                        )
+        ));
         rData.add(new RowData().setValues(Arrays.asList(
-                getCellData("Всего просмотров за вчерашний день на Новых объ-ях", new Color(239, 239, 239, 255), true, "CENTER"),
+                cTest3,
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
-                getCellData("Всего просмотров за вчерашний день на Поднятых объ-ях", new Color(239, 239, 239, 255), true, "CENTER")
+                cTest4
         )));
         CellData header4 = getCellData("Кол-во объявлений", headerBgColor, true);
         CellData header5 = getCellData("Кол-во просмотров", headerBgColor, true);
@@ -1382,64 +1413,64 @@ public class SheetsExample {
                 if (viewAnalysis.ydayTotalViewOfNewAd[i] != 0 && viewAnalysis.ydayTotalViewOfUpAd[i] != 0) {
                     rData.add(new RowData().setValues(Arrays.asList(
                             getCellData(i, new Color(0, 0, 0, 0), true),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.ydayNumOfNewAd[i])),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.ydayTotalViewOfNewAd[i])),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) Math.round(viewAnalysis.ydayTotalViewOfNewAd[i] / (double) viewAnalysis.ydayNumOfNewAd[i]))),
+                            getCellData(viewAnalysis.ydayNumOfNewAd[i], new Color(0, 0, 0, 0), false, "CENTER"),
+                            getCellData(viewAnalysis.ydayTotalViewOfNewAd[i], new Color(0, 0, 0, 0), false, "CENTER"),
+                            getCellData(viewAnalysis.ydayTotalViewOfNewAd[i] / (double) viewAnalysis.ydayNumOfNewAd[i], new Color(0, 0, 0, 0), false, "CENTER"),
                             new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
                             getCellData(i, new Color(0, 0, 0, 0), true),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.ydayNumOfUpAd[i])),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.ydayTotalViewOfUpAd[i])),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) Math.round(viewAnalysis.ydayTotalViewOfUpAd[i] / (double) viewAnalysis.ydayNumOfUpAd[i])))
+                            getCellData(viewAnalysis.ydayNumOfUpAd[i], new Color(0, 0, 0, 0), false, "CENTER"),
+                            getCellData(viewAnalysis.ydayTotalViewOfUpAd[i], new Color(0, 0, 0, 0), false, "CENTER"),
+                            getCellData(viewAnalysis.ydayTotalViewOfUpAd[i] / (double) viewAnalysis.ydayNumOfUpAd[i], new Color(0, 0, 0, 0), false, "CENTER")
                     )));
                 } else if (viewAnalysis.ydayTotalViewOfNewAd[i] == 0 && viewAnalysis.ydayTotalViewOfUpAd[i] != 0) {
                     rData.add(new RowData().setValues(Arrays.asList(
                             getCellData(i, new Color(0, 0, 0, 0), true),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
+                            getCellData(0, new Color(0, 0, 0, 0), false, "CENTER"),
+                            getCellData(0, new Color(0, 0, 0, 0), false, "CENTER"),
+                            getCellData(0, new Color(0, 0, 0, 0), false, "CENTER"),
                             new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
                             getCellData(i, new Color(0, 0, 0, 0), true),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.ydayNumOfUpAd[i])),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.ydayTotalViewOfUpAd[i])),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) Math.round(viewAnalysis.ydayTotalViewOfUpAd[i] / (double) viewAnalysis.ydayNumOfUpAd[i])))
+                            getCellData(viewAnalysis.ydayNumOfUpAd[i], new Color(0, 0, 0, 0), false, "CENTER"),
+                            getCellData(viewAnalysis.ydayTotalViewOfUpAd[i], new Color(0, 0, 0, 0), false, "CENTER"),
+                            getCellData(viewAnalysis.ydayTotalViewOfUpAd[i] / (double) viewAnalysis.ydayNumOfUpAd[i], new Color(0, 0, 0, 0), false, "CENTER")
                     )));
                 } else if (viewAnalysis.ydayTotalViewOfNewAd[i] != 0 && viewAnalysis.ydayTotalViewOfUpAd[i] == 0) {
                     rData.add(new RowData().setValues(Arrays.asList(
                             getCellData(i, new Color(0, 0, 0, 0), true),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.ydayNumOfNewAd[i])),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) viewAnalysis.ydayTotalViewOfNewAd[i])),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) Math.round(viewAnalysis.ydayTotalViewOfNewAd[i] / (double) viewAnalysis.ydayNumOfNewAd[i]))),
+                            getCellData(viewAnalysis.ydayNumOfNewAd[i], new Color(0, 0, 0, 0), false, "CENTER"),
+                            getCellData(viewAnalysis.ydayTotalViewOfNewAd[i], new Color(0, 0, 0, 0), false, "CENTER"),
+                            getCellData(viewAnalysis.ydayTotalViewOfNewAd[i] / (double) viewAnalysis.ydayNumOfNewAd[i], new Color(0, 0, 0, 0), false, "CENTER"),
                             new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
                             getCellData(i, new Color(0, 0, 0, 0), true),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0))
+                            getCellData(0, new Color(0, 0, 0, 0), false, "CENTER"),
+                            getCellData(0, new Color(0, 0, 0, 0), false, "CENTER"),
+                            getCellData(0, new Color(0, 0, 0, 0), false, "CENTER")
                     )));
                 } else if (viewAnalysis.ydayTotalViewOfNewAd[i] == 0 && viewAnalysis.ydayTotalViewOfUpAd[i] == 0) {
                     rData.add(new RowData().setValues(Arrays.asList(
                             getCellData(i, new Color(0, 0, 0, 0), true),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
+                            getCellData(0, new Color(0, 0, 0, 0), false, "CENTER"),
+                            getCellData(0, new Color(0, 0, 0, 0), false, "CENTER"),
+                            getCellData(0, new Color(0, 0, 0, 0), false, "CENTER"),
                             new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
                             getCellData(i, new Color(0, 0, 0, 0), true),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0)),
-                            new CellData().setUserEnteredValue(new ExtendedValue().setNumberValue((double) 0))
+                            getCellData(0, new Color(0, 0, 0, 0), false, "CENTER"),
+                            getCellData(0, new Color(0, 0, 0, 0), false, "CENTER"),
+                            getCellData(0, new Color(0, 0, 0, 0), false, "CENTER")
                     )));
                 }
             }
         }
         rData.add(new RowData().setValues(Arrays.asList(
-                getCellData("За всё время", new Color(239, 239, 239, 255), true),
-                getCellData("=СУММ(B46:B69)", new Color(239, 239, 239, 255)),
-                getCellData("=СУММ(C46:C69)", new Color(239, 239, 239, 255)),
-                getCellData("=СУММ(D46:D69)", new Color(239, 239, 239, 255)),
+                getCellData("За всё время", new Color(239, 239, 239, 255), true, "" , new Color(102,102,102)),
+                getCellData("=СУММ(B46:B69)", new Color(239, 239, 239, 255),false,"CENTER"),
+                getCellData("=СУММ(C46:C69)", new Color(239, 239, 239, 255),false,"CENTER"),
+                getCellData("=СУММ(D46:D69)", new Color(239, 239, 239, 255),false,"CENTER"),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
-                getCellData("За всё время", new Color(239, 239, 239, 255), true),
-                getCellData("=СУММ(G46:G69)", new Color(239, 239, 239, 255)),
-                getCellData("=СУММ(H46:H69)", new Color(239, 239, 239, 255)),
-                getCellData("=СУММ(I46:I69)", new Color(239, 239, 239, 255))
+                getCellData("За всё время", new Color(239, 239, 239, 255), true, "" , new Color(102,102,102)),
+                getCellData("=СУММ(G46:G69)", new Color(239, 239, 239, 255),false,"CENTER"),
+                getCellData("=СУММ(H46:H69)", new Color(239, 239, 239, 255),false,"CENTER"),
+                getCellData("=СУММ(I46:I69)", new Color(239, 239, 239, 255),false,"CENTER")
         )));
 
         sheet.setMerges(Arrays.asList(
