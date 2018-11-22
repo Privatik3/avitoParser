@@ -83,7 +83,7 @@ public class SheetsExample {
         int descLength = 0;
 
         //TODO Здесь можешь регулировать какие фильтры будут отключены
-//        filters.setDate(false);
+        filters.setPosition(false);
 
         boolean offlineMod = false;
 //        if (filters.isDescription()) {
@@ -206,16 +206,6 @@ public class SheetsExample {
                                     requests.add(createCellSizeRequest(1, 4, 5, 20));
                                     requests.add(createCellSizeRequest(1, 5, 9, 150));
 
-                                    // Ширина столбцов на главной
-                                    //Доставка
-                                    requests.add(createCellSizeRequest(0, 17, 18, 105));
-                                    //Понижение цен
-                                    requests.add(createCellSizeRequest(0, 3, 4, 86));
-                                    //id продавца
-                                    requests.add(createCellSizeRequest(0, 19, 20, 105));
-                                    //id продавца
-                                    requests.add(createCellSizeRequest(0, 19, 20, 105));
-
                                     // Добавляем бордер
                                     requests.add(createBorderRequest(1, 0, 12, 0, 4));
                                     requests.add(createBorderRequest(1, 0, 12, 5, 9));
@@ -225,21 +215,15 @@ public class SheetsExample {
                                     requests.add(createBorderRequest(1, 42, 70, 5, 9));
                                     //TODO Добавить здесь остальные рамки
 
-                                } else {
-                                    //TODO Поставить правильный index столбца, когда статистика отключена
-                                    //Доставка
-                                    requests.add(createCellSizeRequest(0, 17, 18, 105));
-                                    //Понижение цен
-                                    requests.add(createCellSizeRequest(0, 3, 4, 86));
-                                    //id продавца
-                                    requests.add(createCellSizeRequest(0, 19, 20, 105));
-                                    //id продавца
-                                    requests.add(createCellSizeRequest(0, 19, 20, 105));
                                 }
 
                                 //TODO Добавить проверки на отключение этих ячеек ( Например позицию можно отключить )
-                                requests.add(createCellSizeRequest(0, 0, 1, 70));
-                                requests.add(createCellSizeRequest(0, 3, 4, 85));
+                                if (filters.isPosition()) {
+                                    requests.add(createCellSizeRequest(0, 0, 1, 70));
+                                    requests.add(createCellSizeRequest(0, 3, 4, 85));
+                                } else {
+                                    requests.add(createCellSizeRequest(0, 2, 3, 85));
+                                }
                             }
 
                             requests.add(new Request().setAppendCells(new AppendCellsRequest().setSheetId(0).setFields("*").setRows(tmpData)));
