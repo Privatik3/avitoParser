@@ -324,7 +324,7 @@ public class SheetsExample {
             double coff = (position / 00.7) / 100;
             int alpha = (int) (255 * (coff > 1 ? 0 : (1 - coff)));
             //TODO Пример как нужно центрировать ячейку
-            clValues.add(getCellData(position, new Color(183, 225, 205, alpha), true, "CENTER" ));
+            clValues.add(getCellData(position, new Color(183, 225, 205, alpha), false, "CENTER"));
         }
 
         String titleName = "";
@@ -348,11 +348,11 @@ public class SheetsExample {
 
         try {
             if (ad.getPriceDown())
-                clValues.add(getCellData(1, new Color(199,217,244, 255), false, "CENTER" ));
+                clValues.add(getCellData(1, new Color(199, 217, 244, 255), false, "CENTER"));
             else
-                clValues.add(getCellData(0, new Color(0, 0, 0, 0), false, "CENTER" ));
+                clValues.add(getCellData(0, new Color(0, 0, 0, 0), false, "CENTER"));
         } catch (Exception ignore) {
-            clValues.add(getCellData(0, new Color(0, 0, 0, 0), false, "CENTER" ));
+            clValues.add(getCellData(0, new Color(0, 0, 0, 0), false, "CENTER"));
         }
 
         String views = "";
@@ -574,12 +574,12 @@ public class SheetsExample {
         try {
             if (ad.getDelivery()) {
                 delivery = 1;
-                clValues.add(getCellData(delivery, new Color(183, 225, 205, 255), false, "CENTER" ));
+                clValues.add(getCellData(delivery, new Color(183, 225, 205, 255), false, "CENTER"));
             } else {
-                clValues.add(getCellData(delivery, new Color(0, 0, 0, 0), false, "CENTER" ));
+                clValues.add(getCellData(delivery, new Color(0, 0, 0, 0), false, "CENTER"));
             }
         } catch (Exception ignore) {
-            clValues.add(getCellData(delivery, new Color(0, 0, 0, 0), false, "CENTER" ));
+            clValues.add(getCellData(delivery, new Color(0, 0, 0, 0), false, "CENTER"));
         }
 
         if (filters.isSellerName()) {
@@ -619,7 +619,7 @@ public class SheetsExample {
             activeAd = ad.getActiveAd();
         } catch (Exception ignore) {
         }
-        clValues.add(getCellData(activeAd, new Color(0, 0, 0, 0), false, "CENTER" ));
+        clValues.add(getCellData(activeAd, new Color(0, 0, 0, 0), false, "CENTER"));
 
         String address = "";
         try {
@@ -1157,7 +1157,9 @@ public class SheetsExample {
                 getCellData("Кол-во объявлений поднятых за 10 дней", new Color(207, 226, 243, 255), true),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
-                getCellData("Всего просмотров за 10 дн. на всех объявлениях", new Color(207, 226, 243, 255), true),
+
+                // TODO Меняем цвет текста в ячейке
+                getCellData("Всего просмотров за 10 дн. на всех объявлениях", new Color(207, 226, 243, 255), true, "", new Color(255, 255, 5)),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
                 getCellData("В среднем просмотров за 10 дн. на всех объявлениях", new Color(207, 226, 243, 255), true)
         )));
@@ -1201,17 +1203,17 @@ public class SheetsExample {
             int alphaTotalViewOfAd = (int) (255 * getAvg(viewAnalysis.totalViewOfAd[i], maxTotalViewOfAd));
             int alphaAvgViewOfAd = (int) (255 * getAvg(viewAnalysis.avgViewOfAd[i], maxAvgViewOfAd));
 
-                rData.add(new RowData().setValues(Arrays.asList(
-                        getCellData(viewAnalysis.tenDays.get(i), new Color(232, 246, 239, 255), false, "RIGHT"),
-                        getCellData(viewAnalysis.numOfNewAd[i], new Color(0, 243, 0, alphaViewAnalysis), false, "CENTER"),
-                        getCellData(viewAnalysis.tenDays.get(i), new Color(232, 246, 239, 255), false, "RIGHT"),
-                        getCellData(viewAnalysis.numOfUpAd[i], new Color(0, 243, 0, alphaNumOfUpAd), false, "CENTER"),
-                        new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
-                        getCellData(viewAnalysis.tenDays.get(i), new Color(232, 246, 239, 255), false, "RIGHT"),
-                        getCellData(viewAnalysis.totalViewOfAd[i], new Color(0, 243, 0, alphaTotalViewOfAd), false, "CENTER"),
-                        getCellData(viewAnalysis.tenDays.get(i), new Color(232, 246, 239, 255), false, "RIGHT"),
-                        getCellData(viewAnalysis.avgViewOfAd[i], new Color(0, 243, 0, alphaAvgViewOfAd), false, "CENTER")
-                )));
+            rData.add(new RowData().setValues(Arrays.asList(
+                    getCellData(viewAnalysis.tenDays.get(i), new Color(232, 246, 239, 255), false, "RIGHT"),
+                    getCellData(viewAnalysis.numOfNewAd[i], new Color(0, 243, 0, alphaViewAnalysis), false, "CENTER"),
+                    getCellData(viewAnalysis.tenDays.get(i), new Color(232, 246, 239, 255), false, "RIGHT"),
+                    getCellData(viewAnalysis.numOfUpAd[i], new Color(0, 243, 0, alphaNumOfUpAd), false, "CENTER"),
+                    new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
+                    getCellData(viewAnalysis.tenDays.get(i), new Color(232, 246, 239, 255), false, "RIGHT"),
+                    getCellData(viewAnalysis.totalViewOfAd[i], new Color(0, 243, 0, alphaTotalViewOfAd), false, "CENTER"),
+                    getCellData(viewAnalysis.tenDays.get(i), new Color(232, 246, 239, 255), false, "RIGHT"),
+                    getCellData(viewAnalysis.avgViewOfAd[i], new Color(0, 243, 0, alphaAvgViewOfAd), false, "CENTER")
+            )));
 
         }
         rData.add(new RowData().setValues(Arrays.asList(
@@ -1237,8 +1239,20 @@ public class SheetsExample {
                 getCellData("Сегодня", new Color(0, 0, 0, 0), true, "RIGHT"),
                 getCellData(viewAnalysis.tenDays.get(0), new Color(0, 0, 0, 0))
         )));
+
+        // TODO Здесь делаем двухцветным и меняем размер шрифта
+        CellData cTest = getCellData("Всего просмотров за сегодня на Новых объ-ях", new Color(239, 239, 239, 255), true, "CENTER", new Color(102,102,102));
+        cTest.setTextFormatRuns(Arrays.asList(
+                new TextFormatRun()
+                        .setStartIndex(17)
+                        .setFormat(new TextFormat()
+                                .setForegroundColor(new com.google.api.services.sheets.v4.model.Color().setRed(0.8f))
+                                .setFontSize(14)
+                        )
+        ));
+
         rData.add(new RowData().setValues(Arrays.asList(
-                getCellData("Всего просмотров за сегодня на Новых объ-ях", new Color(239, 239, 239, 255), true, "CENTER"),
+                cTest,
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
@@ -1615,26 +1629,43 @@ public class SheetsExample {
     }
 
     private static CellData getCellData(Object val, Color userColor, Boolean isBold, String alignment) {
+        return getCellData(val, userColor, isBold, alignment, null);
+    }
+
+    private static CellData getCellData(Object val, Color bgColor, Boolean isBold, String alignment, Color textColor) {
         CellData cell = new CellData();
 
         CellFormat format = new CellFormat();
         com.google.api.services.sheets.v4.model.Color color = new com.google.api.services.sheets.v4.model.Color();
 
-        userColor = convertRgba(userColor);
-        color.setRed((float) userColor.getRed() / 255);
-        color.setGreen((float) userColor.getGreen() / 255);
-        color.setBlue((float) userColor.getBlue() / 255);
+        bgColor = convertRgba(bgColor);
+        color.setRed((float) bgColor.getRed() / 255);
+        color.setGreen((float) bgColor.getGreen() / 255);
+        color.setBlue((float) bgColor.getBlue() / 255);
 
-        if (userColor.getRGB() != -1)
+        TextFormat textFormat = new TextFormat();
+        if (textColor != null) {
+            textFormat.setForegroundColor(new com.google.api.services.sheets.v4.model.Color()
+                    .setRed((float) textColor.getRed() / 255)
+                    .setGreen((float) textColor.getGreen() / 255)
+                    .setBlue((float) textColor.getBlue() / 255)
+            );
+        }
+
+        if (isBold)
+            textFormat.setBold(true);
+
+        if (isBold || textColor != null)
+            format.setTextFormat(textFormat);
+
+        if (bgColor.getRGB() != -1)
             format.setBackgroundColor(color);
 
         if (!alignment.isEmpty())
             format.setHorizontalAlignment(alignment);
 
-        if (isBold)
-            format.setTextFormat(new TextFormat().setBold(true));
 
-        if (userColor.getRGB() != -1 || isBold || !alignment.isEmpty())
+        if (bgColor.getRGB() != -1 || isBold || !alignment.isEmpty() || textColor != null)
             cell.setUserEnteredFormat(format);
 
         ExtendedValue exValue = new ExtendedValue();
