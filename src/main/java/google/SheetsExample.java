@@ -1180,15 +1180,22 @@ public class SheetsExample {
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
                 getCellData("Всего просмотров за сегодня на Поднятых объ-ях", new Color(239, 239, 239, 255), true)
         )));
+        Color headerBgColor = new Color(207, 226, 243);
+
+        CellData header = getCellData("Кол-во объявлений", headerBgColor, true);
+        CellData header1 = getCellData("Кол-во просмотров", headerBgColor, true);
+        CellData header2 = getCellData("Кол-во объявлений", headerBgColor, true);
+        CellData header3 = getCellData("Кол-во просмотров", headerBgColor, true);
+
         rData.add(new RowData().setValues(Arrays.asList(
                 getCellData("Часовые интервалы", new Color(207, 226, 243, 255), true),
-                getCellData("Кол-во объявлений", new Color(207, 226, 243, 255), true),
-                getCellData("Кол-во просмотров", new Color(207, 226, 243, 255), true),
+                header.setNote("Количество Новых объявлений, размещенных в этот час"),
+                header1.setNote("Общее количество просмотров (на момент парсинга) на всех Новых объявлениях, размещенных в этот час"),
                 getCellData("Сред. просмотров", new Color(207, 226, 243, 255), true),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
                 getCellData("Часовые интервалы", new Color(207, 226, 243, 255), true),
-                getCellData("Кол-во объявлений", new Color(207, 226, 243, 255), true),
-                getCellData("Кол-во просмотров", new Color(207, 226, 243, 255), true),
+                header2.setNote("Количество объявлений поднятых в этот час"),
+                header3.setNote("Общее количество просмотров (на момент парсинга) на всех объявлениях, поднятых в этот час"),
                 getCellData("Сред. просмотров", new Color(207, 226, 243, 255), true)
         )));
 
@@ -1274,15 +1281,20 @@ public class SheetsExample {
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
                 getCellData("Всего просмотров за вчерашний день на Поднятых объ-ях", new Color(239, 239, 239, 255), true)
         )));
+        CellData header4 = getCellData("Кол-во объявлений", headerBgColor, true);
+        CellData header5 = getCellData("Кол-во просмотров", headerBgColor, true);
+        CellData header6 = getCellData("Кол-во объявлений", headerBgColor, true);
+        CellData header7 = getCellData("Кол-во просмотров", headerBgColor, true);
+
         rData.add(new RowData().setValues(Arrays.asList(
                 getCellData("Часовые интервалы", new Color(207, 226, 243, 255), true),
-                getCellData("Кол-во объявлений", new Color(207, 226, 243, 255), true),
-                getCellData("Кол-во просмотров", new Color(207, 226, 243, 255), true),
+                header4.setNote("Общее количество Новых объявлений, размещенных вчера в этот час."),
+                header5.setNote("Общее количество просмотров за весь вчерашний день, на Новых объявлениях, размещенных вчера в этот час"),
                 getCellData("Сред. просмотров", new Color(207, 226, 243, 255), true),
                 new CellData().setUserEnteredValue(new ExtendedValue().setStringValue("")),
                 getCellData("Часовые интервалы", new Color(207, 226, 243, 255), true),
-                getCellData("Кол-во объявлений", new Color(207, 226, 243, 255), true),
-                getCellData("Кол-во просмотров", new Color(207, 226, 243, 255), true),
+                header6.setNote("Общее количество объявлений, поднятых вчера в этот час"),
+                header7.setNote("Общее количество просмотров за весь вчерашний день, на объявлениях, поднятых вчера в этот час"),
                 getCellData("Сред. просмотров", new Color(207, 226, 243, 255), true)
         )));
 
